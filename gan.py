@@ -12,7 +12,8 @@ from src.loadopts import *
 METHOD = "GAN"
 VALID_EPOCHS = 20
 FMT = "{description}=" \
-        "={dim_latent}-{criterion_g}-{learning_policy_g}-{optimizer_g}-{lr_g}" \
+        "={dim_latent}" \
+        "={criterion_g}-{learning_policy_g}-{optimizer_g}-{lr_g}-{rtype}" \
         "={criterion_d}-{learning_policy_d}-{optimizer_d}-{lr_d}" \
         "={batch_size}={transform}"
 
@@ -20,14 +21,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("dataset", type=str)
 parser.add_argument("-g", "--generator", type=str, default="gan-g")
 parser.add_argument("-d", "--discriminator", type=str, default="gan-d")
+parser.add_argument("--dim_latent", type=int, default=128)
 
 # for generator
-parser.add_argument("--dim_latent", type=int, default=128)
 parser.add_argument("-cg", "--criterion_g", type=str, default="bce")
 parser.add_argument("-og", "--optimizer_g", type=str, choices=("sgd", "adam"), default="adam")
-parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.002)
-parser.add_argument("-lpg", "--learning_policy_g", type=str, default="cosine", 
+parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.0002)
+parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
+parser.add_argument("--rtype", type=str, default="gaussian",
+                help="the sampling strategy")
 
 # for discriminator
 parser.add_argument("-cd", "--criterion_d", type=str, default="bce")
@@ -124,7 +127,8 @@ def load_cfg():
         dim_latent=opts.dim_latent, 
         criterion=criterion_g,
         optimizer=optimizer_g,
-        learning_policy=learning_policy_g
+        learning_policy=learning_policy_g,
+        rtype=opts.rtype
     )
     discriminator = Discriminator(
         arch=arch_d, device=device,
@@ -177,6 +181,7 @@ def main(
                     "epoch": epoch
                 }
             )
+
             imgs = coach.generator.evaluate(batch_size=10)
             fp = imagemeter(imgs)
             writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
