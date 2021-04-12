@@ -39,7 +39,7 @@ parser.add_argument("--scale", type=float, default=1.)
 # for discriminator
 parser.add_argument("-cd", "--criterion_d", type=str, default="bce")
 parser.add_argument("-od", "--optimizer_d", type=str, choices=("sgd", "adam"), default="adam")
-parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.002)
+parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.0002)
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
 

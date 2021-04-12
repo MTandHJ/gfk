@@ -74,7 +74,7 @@ class Generator(GDtor):
     
     def sample(self, batch_size: int) -> None:
         size = [batch_size] + self.dim_latent
-        return self.sampler(size)
+        return self.sampler(size).to(self.device)
     
     @torch.no_grad()
     def evaluate(
