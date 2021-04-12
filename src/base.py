@@ -40,7 +40,7 @@ class Coach:
             # generator part
             self.generator.train()
             self.discriminator.eval()
-            z = self.generator.sampler(batch_size)
+            z = self.generator.sample(batch_size)
             inputs_fake = self.generator(z)
             outs_g = self.discriminator(self.normalizer(inputs_fake))
             loss_g = self.generator.criterion(outs_g, labels_real) # real...

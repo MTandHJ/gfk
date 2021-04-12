@@ -29,8 +29,12 @@ parser.add_argument("-og", "--optimizer_g", type=str, choices=("sgd", "adam"), d
 parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.0002)
 parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
-parser.add_argument("--rtype", type=str, default="gaussian",
+parser.add_argument("--rtype", type=str, default="normal",
                 help="the sampling strategy")
+parser.add_argument("--low", type=float, default=0.)
+parser.add_argument("--high", type=float, default=1.)
+parser.add_argument("--loc", type=float, default=0.)
+parser.add_argument("--scale", type=float, default=1.)
 
 # for discriminator
 parser.add_argument("-cd", "--criterion_d", type=str, default="bce")
@@ -121,14 +125,23 @@ def load_cfg():
     criterion_g = load_loss_func(loss_type=opts.criterion_g)
     criterion_d = load_loss_func(loss_type=opts.criterion_d)
 
+    sampler = load_sampler(
+        rtype=opts.rtype,
+        low=opts.low,
+        high=opts.high,
+        loc=opts.loc,
+        scale=opts.scale
+    )
+
     # load generator
     generator = Generator(
-        arch=arch_g, device=device,
+        arch=arch_g, 
+        device=device,
+        sampler=sampler,
         dim_latent=opts.dim_latent, 
         criterion=criterion_g,
         optimizer=optimizer_g,
         learning_policy=learning_policy_g,
-        rtype=opts.rtype
     )
     discriminator = Discriminator(
         arch=arch_d, device=device,

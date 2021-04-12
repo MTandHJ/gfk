@@ -280,6 +280,31 @@ def load_learning_policy(
     return learning_policy
 
 
+def load_sampler(
+    rtype: str, *,
+    low: float = 0.,
+    high: float = 1.,
+    loc: float = 0.,
+    scale: float = 1.,
+    rsample=False
+):
+    """
+    uniform: (low, high)
+    normal: (loc, scale)
+    """
+    if rtype == "uniform":
+        sampler = torch.distributions.uniform.Uniform(low=low, high=high)
+    elif rtype == "normal":
+        sampler = torch.distributions.normal.Normal(loc=loc, scale=scale)
+    else:
+        raise NotImplementedError(f"No such sampler: {rtype}. \n " \
+            f"Refer to the following: {load_sampler.__doc__}")
+
+    rsample = "rsample" if rsample else "sample"
+    sampler = getattr(sampler, rsample)
+    return sampler
+
+
 def generate_path(
     method: str, dataset_type: str, 
     generator: str, discriminator: str,  

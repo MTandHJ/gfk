@@ -50,11 +50,13 @@ class GDtor(nn.Module):
 class Generator(GDtor):
 
     def __init__(
-        self, arch: nn.Module, device: torch.device,
-        dim_latent: int, criterion: Callable, 
+        self, arch: nn.Module, 
+        device: torch.device,
+        sampler: Callable,
+        dim_latent: int, 
+        criterion: Callable, 
         optimizer: torch.optim.Optimizer, 
         learning_policy: "learning rate policy",
-        rtype: str = "uniform"
     ):
         super(Generator, self).__init__(
             arch=arch, device=device,
@@ -68,23 +70,18 @@ class Generator(GDtor):
         else:
             self.dim_latent = [dim_latent]
         
-        self.rtype = rtype
+        self.sampler = sampler
     
-    def sampler(self, batch_size: int) -> None:
+    def sample(self, batch_size: int) -> None:
         size = [batch_size] + self.dim_latent
-        if self.rtype == "gaussian":
-            return torch.randn(size).to(self.device)
-        elif self.rtype == "uniform":
-            return torch.rand(size).to(self.device)
-        else:
-            raise NotImplementedError(f"No such rtype {self.rtype}.")
+        return self.sampler(size)
     
     @torch.no_grad()
     def evaluate(
         self, z: Optional[torch.Tensor] = None, batch_size: int = 10
     ) -> torch.Tensor:
         if z is None:
-            z = self.sampler(batch_size)
+            z = self.sample(batch_size)
         else:
             z = z.to(self.device)
         self.arch.eval()
