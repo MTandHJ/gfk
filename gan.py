@@ -43,6 +43,15 @@ parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float,
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
 
+
+# for evaluation
+parser.add_argument("--sampling_times", type=int, default=5000)
+parser.add_argument("--e_batch_size", type=int, default=16)
+parser.add_argument("--e_splits", type=int, default=1)
+parser.add_argument("--resize", action="store_false", default=True)
+parser.add_argument("--need_fid", action="store_false", default=True)
+parser.add_argument("--need_is", action="store_false", default=True)
+
 # basic settings
 parser.add_argument("-mom", "--momentum", type=float, default=0.9,
                 help="the momentum used for SGD")
@@ -198,6 +207,22 @@ def main(
             imgs = coach.generator.evaluate(batch_size=10)
             fp = imagemeter(imgs)
             writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
+
+            fid_score, is_score = coach.evaluate(
+                dataset_type=opts.dataset,
+                n=opts.sampling_times,
+                batch_size=opts.e_batch_size,
+                n_splits=opts.e_splits,
+                resize=opts.resize,
+                need_fid=opts.need_fid,
+                need_is=opts.need_is
+            )
+
+            writter.add_scalar("FID", fid_score, epoch)
+            writter.add_scalar("IS", is_score, epoch)
+
+            print(f">>> Current FID score: {fid_score:.6f}")
+            print(f">>> Current IS  score: {is_score:.6f}")
 
         loss_g, loss_d, validity = coach.train(trainloader, epoch=epoch)
         writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, epoch)

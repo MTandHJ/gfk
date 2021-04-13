@@ -48,16 +48,6 @@ SHAPES = {
     "cifar100": (3, 32, 32)
 }
 
-TRANSFORMS = {
-    "mnist": {
-        'default': T.ToTensor()
-    },
-    "cifar10": {
-        'default': T.ToTensor()
-    }
-}
-TRANSFORMS["cifar100"] = TRANSFORMS["cifar10"]
-
 
 
 # env settings

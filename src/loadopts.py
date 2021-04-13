@@ -128,10 +128,7 @@ def _get_transform(
     transform: str, 
     train: bool = True
 ) -> "augmentation":
-    if train:
-        return TRANSFORMS[dataset_type][transform]
-    else:
-        return T.ToTensor()
+    return T.ToTensor()
 
 
 def _dataset(

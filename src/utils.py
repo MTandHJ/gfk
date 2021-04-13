@@ -1,13 +1,12 @@
 
 
 
-from typing import Optional, Any, Union, Dict
+from typing import Optional, Any, Union, Dict, NoReturn
 import torch
 import torch.nn as nn
 import numpy as np
 import random
-import os
-import sys
+import os, sys, pickle
 from .config import SAVED_FILENAME
 from freeplot.base import FreePlot
 
@@ -108,11 +107,12 @@ def load(
     model: nn.Module, 
     path: str, 
     device: torch.device,
+    filename: str = SAVED_FILENAME,
     strict: bool = True, 
     except_key: Optional[str] = None
 ) -> None:
 
-    filename = os.path.join(path, SAVED_FILENAME)
+    filename = os.path.join(path, filename)
     if str(device) =="cpu":
         state_dict = torch.load(filename, map_location="cpu")
         
@@ -149,6 +149,32 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+def export_pickle(data: Dict, filename: str) -> NoReturn:
+    print(">>> Export File ...")
+    fh = None
+    try:
+        fh = open(filename, "wb")
+        pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
+    except (EnvironmentError, pickle.PicklingError) as err:
+        ExportError_ = type("ExportError", (Exception,), dict())
+        raise ExportError_(f"Export Error: {err}")
+    finally:
+        if fh is not None:
+            fh.close()
+
+def import_pickle(filename: str) -> NoReturn:
+    print(">>> Import File ...")
+    fh = None
+    try:
+        fh = open(filename, "rb")
+        return pickle.load(fh)
+    except (EnvironmentError, pickle.UnpicklingError) as err:
+        ImportError_ = type("ImportError", (Exception,), dict())
+        raise ImportError_(f"Import Error: {err}")
+    finally:
+        if fh is not None:
+            fh.close()
 
 # caculate the lp distance along the dim you need,
 # dim could be tuple or list containing multi dims.

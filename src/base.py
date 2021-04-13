@@ -6,7 +6,12 @@ import torch.nn as nn
 from collections.abc import Iterable
 
 from .utils import AverageMeter, ProgressMeter
+from .loadopts import load_dataloader
 from models.base import Generator, Discriminator
+from metrics.datasets import TensorDataset
+from metrics.fid_score import fid_score_single
+from metrics.inception_score import inception_score
+from metrics.utils import load_inception
 
 
 class Coach:
@@ -24,6 +29,10 @@ class Coach:
         self.loss_d = AverageMeter("Loss_D")
         self.validity = AverageMeter("Validity")
         self.progress = ProgressMeter(self.loss_g, self.loss_d, self.validity)
+
+        self.inception_model, _ = load_inception(
+            normalizer=self.normalizer
+        )
 
     def save(self, path: str, postfix: str = '') -> None:
         self.generator.save(path, postfix)
@@ -74,6 +83,50 @@ class Coach:
         self.discriminator.learning_policy.step()
 
         return self.loss_g.avg, self.loss_d.avg, self.validity.avg
+
+    def evaluate(
+        self,
+        dataset_type: str,
+        n: int = 5000,
+        batch_size: int = 16,
+        n_splits: int = 1,
+        resize: bool = True,
+        need_fid: bool = True,
+        need_is: bool = True
+    ):
+
+        fid_score = None
+        is_score = None
+        data = []
+        for _ in range(0, n, batch_size):
+            data.append(self.generator.evaluate(batch_size=batch_size).detach().cpu())
+        dataset = TensorDataset(data)
+        dataloader = load_dataloader(
+            dataset=dataset,
+            batch_size=batch_size,
+        )
+        
+        self.inception_model.resize = resize
+        
+        if need_fid:
+            fid_score = fid_score_single(
+                dataloader=dataloader,
+                dataset_type=dataset_type,
+                model=model,
+                device=device
+            )
+        
+        if need_is:
+            is_score = inception_score(
+                dataloader=dataloader,
+                model=model,
+                device=device,
+                n_splits=n_splits
+            )
+
+        return fid_score, is_score
+
+
 
 
 
