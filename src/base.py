@@ -27,8 +27,7 @@ class Coach:
         self.device = device
         self.loss_g = AverageMeter("Loss_G")
         self.loss_d = AverageMeter("Loss_D")
-        self.validity = AverageMeter("Validity")
-        self.progress = ProgressMeter(self.loss_g, self.loss_d, self.validity)
+        self.progress = ProgressMeter(self.loss_g, self.loss_d)
 
     def save(self, path: str, postfix: str = '') -> None:
         self.generator.save(path, postfix)
@@ -38,8 +37,6 @@ class Coach:
         self.progress.step() # reset the meter
         for inputs_real, _ in trainloader:
             batch_size = inputs_real.size(0)
-            labels_real = torch.ones(batch_size).to(self.device)
-            labels_fake = torch.zeros(batch_size).to(self.device)
             inputs_real = inputs_real.to(self.device)
             
             # generator part
@@ -48,7 +45,7 @@ class Coach:
             z = self.generator.sample(batch_size)
             inputs_fake = self.generator(z)
             outs_g = self.discriminator(inputs_fake)
-            loss_g = self.generator.criterion(outs_g, labels_real) # real...
+            loss_g = self.generator.criterion(outs_g) # real...
 
             # update the generator
             self.generator.optimizer.zero_grad()
@@ -59,9 +56,8 @@ class Coach:
             self.generator.eval()
             self.discriminator.train()
             inputs = torch.cat((inputs_real, inputs_fake.detach()), dim=0)
-            labels = torch.cat((labels_real, labels_fake), dim=0)
             outs_d = self.discriminator(inputs)
-            loss_d = self.discriminator.criterion(outs_d, labels)
+            loss_d = self.discriminator.criterion(*outs_d.chunk(2))
 
             # update the discriminator
             self.discriminator.optimizer.zero_grad()
@@ -69,16 +65,14 @@ class Coach:
             self.discriminator.optimizer.step()
 
             # log
-            validity = (outs_d.round() == labels).sum().item()
             self.loss_g.update(loss_g.item(), n=batch_size, mode="mean")
             self.loss_d.update(loss_d.item(), n=batch_size, mode="mean")
-            self.validity.update(validity, n=batch_size * 2, mode="sum")
         
         self.progress.display(epoch=epoch)
         self.generator.learning_policy.step()
         self.discriminator.learning_policy.step()
 
-        return self.loss_g.avg, self.loss_d.avg, self.validity.avg
+        return self.loss_g.avg, self.loss_d.avg
 
     def evaluate(
         self,

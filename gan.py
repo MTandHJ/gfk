@@ -133,8 +133,8 @@ def load_cfg():
     )
 
     # load criteria
-    criterion_g = load_loss_func(loss_type=opts.criterion_g)
-    criterion_d = load_loss_func(loss_type=opts.criterion_d)
+    criterion_g = load_loss_func(loss_type=opts.criterion_g, mode="gen")
+    criterion_d = load_loss_func(loss_type=opts.criterion_d, mode="dis")
 
     sampler = load_sampler(
         rtype=opts.rtype,
@@ -228,16 +228,13 @@ def main(
                 need_fid=opts.need_fid,
                 need_is=opts.need_is
             )
-
-            writter.add_scalar("FID", fid_score, epoch)
-            writter.add_scalar("IS", is_score, epoch)
+            writter.add_scalars("Scores", {"FID":fid_score, "IS":is_score}, epoch)
 
             print(f">>> Current FID score: {fid_score:.6f}")
             print(f">>> Current IS  score: {is_score:.6f}")
 
-        loss_g, loss_d, validity = coach.train(trainloader, epoch=epoch)
+        loss_g, loss_d= coach.train(trainloader, epoch=epoch)
         writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, epoch)
-        writter.add_scalar("Validity", validity, epoch)
 
     imgs = coach.generator.evaluate(batch_size=10)
     fp = imagemeter(imgs)

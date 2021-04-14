@@ -64,26 +64,24 @@ def load_inception_model(
     return load_inception(resize=resize, normalizer=normalizer)
 
 
-def load_loss_func(loss_type: str, **kwargs) -> Callable[..., torch.Tensor]:
+def load_loss_func(
+    loss_type: str, 
+    mode: str,
+    reduction="mean",
+    **kwargs
+) -> Callable[..., torch.Tensor]:
     """
-    cross_entropy: the softmax cross entropy loss
-    bce: binary cross entropy
-    mse: mean squared loss
-    energy: energy loss
+    loss_type:
+        bce: binary cross entropy
+    mode:
+        gen or dis
+    reduction:
+        mean or sum
     """
     loss_func: Callable
-    if loss_type == "cross_entropy":
-        from .loss_zoo import cross_entropy
-        loss_func = cross_entropy
-    elif loss_type == "bce":
-        from .loss_zoo import bce_loss
-        loss_func = bce_loss
-    elif loss_type == "mse":
-        from .loss_zoo import mse_loss
-        loss_func = mse_loss
-    elif loss_type == "energy":
-        from .loss_zoo import Energy
-        loss_func = Energy(**kwargs)
+    if loss_type == "bce":
+        from .loss_zoo import BCELoss
+        loss_func = BCELoss(mode=mode, reduction=reduction)
     else:
         raise LossNotDefineError(f"Loss {loss_type} is not defined.\n" \
                     f"Refer to the following: {load_loss_func.__doc__}")
