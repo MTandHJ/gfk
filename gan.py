@@ -108,7 +108,7 @@ def load_cfg():
         show_progress=opts.progress
     )
     normalizer = load_normalizer(dataset_type=opts.dataset)
-    augmenter = load_augmenter(policy=opts.aug_policy)
+    augmentor = load_augmentor(policy=opts.aug_policy)
 
     # load optimizer and correspoding learning policy
     optimizer_g = load_optimizer(
@@ -159,7 +159,7 @@ def load_cfg():
         criterion=criterion_d, 
         optimizer=optimizer_d,
         normalizer=normalizer,
-        augmenter=augmenter,
+        augmentor=augmentor,
         learning_policy=learning_policy_d
     )
 

@@ -185,7 +185,7 @@ def load_normalizer(dataset_type: str) -> _Normalize:
     return normalizer
 
 
-def load_augmenter(policy: str = '', channels_first: bool = True):
+def load_augmentor(policy: str = '', channels_first: bool = True):
     from .augmentation import DiffAugment
     return partial(DiffAugment, policy=policy, channels_first=channels_first)
 

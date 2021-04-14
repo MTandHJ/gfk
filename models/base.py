@@ -99,7 +99,7 @@ class Discriminator(GDtor):
         criterion: Callable,
         optimizer: torch.optim.Optimizer, 
         normalizer: Callable[T, T],
-        augmenter: Callable[T, T],
+        augmentor: Callable[T, T],
         learning_policy: "learning rate policy"
     ):
         super(Discriminator, self).__init__(
@@ -110,10 +110,10 @@ class Discriminator(GDtor):
         )
 
         self.normalizer = normalizer
-        self.augmenter = augmenter
+        self.augmentor = augmentor
 
     def forward(self, imgs: torch.Tensor, *others):
-        imgs = self.augmenter(imgs)
+        imgs = self.augmentor(imgs)
         imgs = self.normalizer(imgs)
         return self.arch(imgs, *others)
 
