@@ -6,6 +6,8 @@ import torch.nn as nn
 import os
 
 
+T = TypeVar('T')
+
 class GDtor(nn.Module):
 
     def __init__(
@@ -89,7 +91,34 @@ class Generator(GDtor):
         return outs
 
 
-class Discriminator(GDtor): pass
+class Discriminator(GDtor):
+
+    def __init__(
+        self, arch: nn.Module, 
+        device: torch.device,
+        criterion: Callable,
+        optimizer: torch.optim.Optimizer, 
+        normalizer: Callable[T, T],
+        augmenter: Callable[T, T],
+        learning_policy: "learning rate policy"
+    ):
+        super(Discriminator, self).__init__(
+            arch=arch, device=device, 
+            criterion=criterion, 
+            optimizer=optimizer,
+            learning_policy=learning_policy
+        )
+
+        self.normalizer = normalizer
+        self.augmenter = augmenter
+
+    def forward(self, imgs: torch.Tensor, *others):
+        imgs = self.augmenter(imgs)
+        imgs = self.normalizer(imgs)
+        return self.arch(imgs, *others)
+
+ 
+
 
 
 

@@ -42,7 +42,8 @@ parser.add_argument("-od", "--optimizer_d", type=str, choices=("sgd", "adam"), d
 parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.002)
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
-
+parser.add_argument("--aug_policy", type=str, default="",
+                help="choose augmentation policy from: color, translation and cutout")
 
 # for evaluation
 parser.add_argument("--sampling_times", type=int, default=5000)
@@ -107,6 +108,7 @@ def load_cfg():
         show_progress=opts.progress
     )
     normalizer = load_normalizer(dataset_type=opts.dataset)
+    augmenter = load_augmenter(policy=opts.aug_policy)
 
     # load optimizer and correspoding learning policy
     optimizer_g = load_optimizer(
@@ -156,8 +158,18 @@ def load_cfg():
         arch=arch_d, device=device,
         criterion=criterion_d, 
         optimizer=optimizer_d,
+        normalizer=normalizer,
+        augmenter=augmenter,
         learning_policy=learning_policy_d
     )
+
+    # load the inception model for FID and IS evaluation
+    if opts.need_fid or opts.need_is:
+        inception_model = load_inception_model(
+            resize=opts.resize, normalizer=normalizer
+        )
+    else:
+        inception_model = None
 
     # generate the path for logging information and saving parameters
     cfg['info_path'], log_path = generate_path(
@@ -181,7 +193,7 @@ def load_cfg():
         generator=generator,
         discriminator=discriminator,
         device=device,
-        normalizer=normalizer
+        inception_model=inception_model
     )
 
     return cfg, log_path
@@ -213,7 +225,6 @@ def main(
                 n=opts.sampling_times,
                 batch_size=opts.e_batch_size,
                 n_splits=opts.e_splits,
-                resize=opts.resize,
                 need_fid=opts.need_fid,
                 need_is=opts.need_is
             )

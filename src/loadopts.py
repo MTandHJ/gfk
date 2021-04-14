@@ -56,6 +56,14 @@ def load_model(model_type: str) -> Callable:
     return cast(Callable, model)
 
 
+def load_inception_model(
+    resize: bool = True,
+    normalizer: Optional[Callable] = None
+):
+    from metrics.utils import load_inception
+    return load_inception(resize=resize, normalizer=normalizer)
+
+
 def load_loss_func(loss_type: str, **kwargs) -> Callable[..., torch.Tensor]:
     """
     cross_entropy: the softmax cross entropy loss
@@ -177,9 +185,10 @@ def load_normalizer(dataset_type: str) -> _Normalize:
     return normalizer
 
 
-def load_augmentation(policy: str = '', channels_first: bool = True):
+def load_augmenter(policy: str = '', channels_first: bool = True):
     from .augmentation import DiffAugment
     return partial(DiffAugment, policy=policy, channels_first=channels_first)
+
 
 def load_dataset(
     dataset_type: str, 

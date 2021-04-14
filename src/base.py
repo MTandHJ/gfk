@@ -19,20 +19,16 @@ class Coach:
     def __init__(
         self, generator: Generator, 
         discriminator: Discriminator,
-        device: torch.device, normalizer: Callable, 
+        inception_model: nn.Module,
+        device: torch.device
     ):
         self.generator = generator
         self.discriminator = discriminator
         self.device = device
-        self.normalizer = normalizer
         self.loss_g = AverageMeter("Loss_G")
         self.loss_d = AverageMeter("Loss_D")
         self.validity = AverageMeter("Validity")
         self.progress = ProgressMeter(self.loss_g, self.loss_d, self.validity)
-
-        self.inception_model, _ = load_inception(
-            normalizer=self.normalizer
-        )
 
     def save(self, path: str, postfix: str = '') -> None:
         self.generator.save(path, postfix)
@@ -51,7 +47,7 @@ class Coach:
             self.discriminator.eval()
             z = self.generator.sample(batch_size)
             inputs_fake = self.generator(z)
-            outs_g = self.discriminator(self.normalizer(inputs_fake))
+            outs_g = self.discriminator(inputs_fake)
             loss_g = self.generator.criterion(outs_g, labels_real) # real...
 
             # update the generator
@@ -64,7 +60,7 @@ class Coach:
             self.discriminator.train()
             inputs = torch.cat((inputs_real, inputs_fake.detach()), dim=0)
             labels = torch.cat((labels_real, labels_fake), dim=0)
-            outs_d = self.discriminator(self.normalizer(inputs))
+            outs_d = self.discriminator(inputs)
             loss_d = self.discriminator.criterion(outs_d, labels)
 
             # update the discriminator
@@ -87,10 +83,9 @@ class Coach:
     def evaluate(
         self,
         dataset_type: str,
-        n: int = 5000,
+        n: int = 10000,
         batch_size: int = 16,
         n_splits: int = 1,
-        resize: bool = True,
         need_fid: bool = True,
         need_is: bool = True
     ):
@@ -105,8 +100,6 @@ class Coach:
             dataset=dataset,
             batch_size=batch_size,
         )
-        
-        self.inception_model.resize = resize
         
         if need_fid:
             fid_score = fid_score_single(
