@@ -144,6 +144,13 @@ def load_checkpoint(path, models: Dict) -> int:
     return epoch
 
 def set_seed(seed: int) -> None:
+    from torch.backends import cudnn
+    if seed == -1:
+        seed = random.randint(0, 1024)
+        print(f"Choose seed randomly: {seed}")
+        cudnn.benchmark, cudnn.deterministic = True, False
+    else:
+        cudnn.benchmark, cudnn.deterministic = False, True
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

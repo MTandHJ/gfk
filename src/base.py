@@ -112,14 +112,14 @@ class Coach:
             fid_score = fid_score_single(
                 dataloader=dataloader,
                 dataset_type=dataset_type,
-                model=model,
+                model=self.inception_model,
                 device=device
             )
         
         if need_is:
             is_score = inception_score(
                 dataloader=dataloader,
-                model=model,
+                model=self.inception_model,
                 device=device,
                 n_splits=n_splits
             )

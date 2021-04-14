@@ -4,7 +4,10 @@ from typing import TypeVar, Callable, Optional, Tuple, Dict, cast
 import torch
 import torchvision
 import torchvision.transforms as T
+
+from functools import partial
 from tqdm import tqdm
+
 
 
 from .dict2obj import Config
@@ -169,12 +172,14 @@ def _dataset(
     return dataset
 
 
-
-
 def load_normalizer(dataset_type: str) -> _Normalize:
     normalizer = _get_normalizer(dataset_type)
     return normalizer
 
+
+def load_augmentation(policy: str = '', channels_first: bool = True):
+    from .augmentation import DiffAugment
+    return partial(DiffAugment, policy=policy, channels_first=channels_first)
 
 def load_dataset(
     dataset_type: str, 

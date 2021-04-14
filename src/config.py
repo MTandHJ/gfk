@@ -13,7 +13,7 @@ from .dict2obj import Config
 
 
 
-
+# for saving
 ROOT = "../data"
 INFO_PATH = "./infos/{method}/{dataset}-{generator}-{discriminator}/{description}"
 LOG_PATH = "./logs/{method}/{dataset}-{generator}-{discriminator}/{description}"
@@ -21,7 +21,7 @@ TIMEFMT = "%m%d%H"
 SAVED_FILENAME = "Generator_paras.pt" # the filename of saved model
 
 
-# basic properties of inputs
+# basic properties of dataset
 MEANS = {
     "mnist": None,
     "cifar10": [0.4914, 0.4824, 0.4467],
