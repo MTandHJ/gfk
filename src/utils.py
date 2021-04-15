@@ -45,7 +45,7 @@ class ProgressMeter:
         self.prefix = prefix
 
     def display(self, *, epoch: int = 8888) -> None:
-        entries = [self.prefix + f"[Epoch: {epoch:<4d}]"]
+        entries = [self.prefix + f"[Epoch: {epoch+1:<4d}]"]
         entries += [str(meter) for meter in self.meters]
         print('\t'.join(entries))
 

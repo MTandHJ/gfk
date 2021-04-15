@@ -200,7 +200,8 @@ def load_cfg():
     return cfg, log_path
 
 
-def evaluate(coach):
+def evaluate(coach, epoch):
+    from src.utils import imagemeter
     imgs = coach.generator.evaluate(batch_size=10)
     fp = imagemeter(imgs)
     writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
@@ -222,7 +223,7 @@ def main(
     coach, trainloader,
     start_epoch, info_path
 ):
-    from src.utils import save_checkpoint, imagemeter
+    from src.utils import save_checkpoint
     for epoch in range(start_epoch, opts.epochs):
         if epoch % SAVE_FREQ == 0:
             save_checkpoint(
@@ -235,13 +236,13 @@ def main(
             )
         
         if epoch % VALID_FREQ == 0:
-            evaluate(coach)
+            evaluate(coach, epoch + 1)
             
 
         loss_g, loss_d= coach.train(trainloader, epoch=epoch)
         writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, epoch)
     
-    evaluate(coach)
+    evaluate(coach, opts.epochs)
 
     
 

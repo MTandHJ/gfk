@@ -25,6 +25,14 @@ class GDtor(nn.Module):
         self.optimizer = optimizer
         self.learning_policy = learning_policy
 
+    def on(self):
+        self.arch.train()
+        self.arch.requires_grad_(True)
+
+    def off(self):
+        self.arch.eval()
+        self.arch.requires_grad_(False)
+
     def save(self, path: str, postfix: str = "") -> None:
         torch.save(self.arch.state_dict(), 
             os.path.join(path, f"{self.__class__.__name__}{postfix}_paras.pt"))

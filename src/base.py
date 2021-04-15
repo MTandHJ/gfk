@@ -41,8 +41,8 @@ class Coach:
             inputs_real = inputs_real.to(self.device)
             
             # generator part
-            self.generator.train()
-            self.discriminator.eval()
+            self.generator.on()
+            self.discriminator.off()
             z = self.generator.sample(batch_size)
             inputs_fake = self.generator(z)
             outs_g = self.discriminator(inputs_fake)
@@ -54,8 +54,8 @@ class Coach:
             self.generator.optimizer.step()
 
             # discriminator part
-            self.generator.eval()
-            self.discriminator.train()
+            self.generator.off()
+            self.discriminator.on()
             inputs = torch.cat((inputs_real, inputs_fake.detach()), dim=0)
             outs_d = self.discriminator(inputs)
             loss_d = self.discriminator.criterion(*outs_d.chunk(2))
