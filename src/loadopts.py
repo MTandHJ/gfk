@@ -61,7 +61,7 @@ def load_inception_model(
     normalizer: Optional[Callable] = None
 ):
     from metrics.utils import load_inception
-    return load_inception(resize=resize, normalizer=normalizer)
+    return load_inception(resize=resize, normalizer=normalizer)[0]
 
 
 def load_loss_func(

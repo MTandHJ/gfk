@@ -40,15 +40,80 @@ class LossFunc(nn.Module):
     def criterion_dis(self, *inputs):
         raise NotImplementedError()
 
-class BCELoss(LossFunc):
+    def forward(self, *inputs, **kwargs):
+        return self.loss_func(*inputs, **kwargs)
 
+class BCELoss(LossFunc):
+    """
+    generator:
+        $\min -\log \sigma(D(G(z)))$
+    discriminator:
+        $\min -\log \sigma(D(x)) - \log(1 - \sigma(D(G(z))))$
+    sigma is sigmoid here.
+    """
     def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
         return -F.logsigmoid(outs)
 
     def criterion_dis(
         self, outs_real: torch.Tensor, outs_fake: torch.Tensor
     ) -> torch.Tensor:
-        assert outs_real.size(0) == outs_fake.size(0), \ 
-            f"the batch size of outs_real: {outs_real.size(0)} " \ 
+        assert outs_real.size(0) == outs_fake.size(0), \
+            f"the batch size of outs_real: {outs_real.size(0)} " \
             f"doesnot match that of outs_fake: {outs_fake.size(0)}"
         return -F.logsigmoid(outs_real) - F.logsigmoid(1 - outs_fake)
+
+class HingeLoss(LossFunc):
+    """
+    generator:
+        $\min -D(G(z))$
+    discriminator:
+        $\min \max(0, 1 - D(x)) + \max(0, 1 + D(G(z)))$
+    """
+    def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
+        return -outs
+
+    def criterion_dis(
+        self, outs_real: torch.Tensor, outs_fake: torch.Tensor
+    ) -> torch.Tensor:
+        assert outs_real.size(0) == outs_fake.size(0), \
+            f"the batch size of outs_real: {outs_real.size(0)} " \
+            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
+        return F.relu(1 - outs_real) + F.relu(1 + outs_fake)
+
+class WLoss(LossFunc):
+    """
+    WGAN Loss:
+    generator:
+        $\min -D(G(z))$
+    discriminator:
+        $\min D(x) - D(G(z))$
+    """
+    def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
+        return -outs
+
+    def criterion_dis(
+        self, outs_real: torch.Tensor, outs_fake: torch.Tensor
+    ) -> torch.Tensor:
+        assert outs_real.size(0) == outs_fake.size(0), \
+            f"the batch size of outs_real: {outs_real.size(0)} " \
+            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
+        return outs_fake - outs_real
+
+class LeastSquaresLoss(LossFunc):
+    """
+    generator:
+        $\min (D(G(z)) - 1)^2 / 2$
+    discriminator:
+        $\min [(D(x) - 1)^2 + (D(G(z)))^2] / 2
+    """
+    def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
+        return (outs - 1).pow(2) / 2
+
+    def criterion_dis(
+        self, outs_real: torch.Tensor, outs_fake: torch.Tensor
+    ) -> torch.Tensor:
+        assert outs_real.size(0) == outs_fake.size(0), \
+            f"the batch size of outs_real: {outs_real.size(0)} " \
+            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
+        return ((outs_real - 1).pow(2) + outs_fake.pow(2)) / 2
+

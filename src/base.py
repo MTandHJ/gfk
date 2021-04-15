@@ -24,6 +24,7 @@ class Coach:
     ):
         self.generator = generator
         self.discriminator = discriminator
+        self.inception_model = inception_model
         self.device = device
         self.loss_g = AverageMeter("Loss_G")
         self.loss_d = AverageMeter("Loss_D")
@@ -84,11 +85,12 @@ class Coach:
         need_is: bool = True
     ):
 
-        fid_score = None
-        is_score = None
+        fid_score = -1
+        is_score = -1
         data = []
         for _ in range(0, n, batch_size):
             data.append(self.generator.evaluate(batch_size=batch_size).detach().cpu())
+        data = torch.cat(data)
         dataset = TensorDataset(data)
         dataloader = load_dataloader(
             dataset=dataset,
@@ -100,14 +102,14 @@ class Coach:
                 dataloader=dataloader,
                 dataset_type=dataset_type,
                 model=self.inception_model,
-                device=device
+                device=self.device
             )
         
         if need_is:
-            is_score = inception_score(
+            is_score, is_std = inception_score(
                 dataloader=dataloader,
                 model=self.inception_model,
-                device=device,
+                device=self.device,
                 n_splits=n_splits
             )
 

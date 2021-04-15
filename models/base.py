@@ -98,8 +98,8 @@ class Discriminator(GDtor):
         device: torch.device,
         criterion: Callable,
         optimizer: torch.optim.Optimizer, 
-        normalizer: Callable[T, T],
-        augmentor: Callable[T, T],
+        normalizer: Callable[[T], T],
+        augmentor: Callable[[T], T],
         learning_policy: "learning rate policy"
     ):
         super(Discriminator, self).__init__(

@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np
+from scipy import linalg
 
 import os
 
@@ -110,7 +111,7 @@ def fid_score_single(
 
     infos = import_pickle(os.path.join(PATH, ".".join((dataset_type, POSTFIX))))
     mu1, cov1 = infos['mu'], infos['cov']
-    mu2, cov2 = _step(dataloader1, inception_model, device)
+    mu2, cov2 = _step(dataloader, model, device)
     return calculate_frechet_distance(mu1, cov1, mu2, cov2)
 
 
@@ -122,8 +123,8 @@ def fid_score_double(
     device: torch.device,
 ) -> Tuple[float]:
 
-    mu1, cov1 = _step(dataloader1, inception_model, device)
-    mu2, cov2 = _step(dataloader2, inception_model, device)
+    mu1, cov1 = _step(dataloader1, model, device)
+    mu2, cov2 = _step(dataloader2, model, device)
 
     return calculate_frechet_distance(mu1, cov1, mu2, cov2)
 
