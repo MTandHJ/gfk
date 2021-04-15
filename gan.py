@@ -46,9 +46,9 @@ parser.add_argument("--aug_policy", type=str, default="",
                 help="choose augmentation policy from: color, translation and cutout")
 
 # for evaluation
-parser.add_argument("--sampling_times", type=int, default=5000)
-parser.add_argument("--e_batch_size", type=int, default=16)
-parser.add_argument("--e_splits", type=int, default=1)
+parser.add_argument("--sampling_times", type=int, default=10000)
+parser.add_argument("--e_batch_size", type=int, default=64)
+parser.add_argument("--e_splits", type=int, default=10)
 parser.add_argument("--resize", action="store_false", default=True)
 parser.add_argument("--need_fid", action="store_false", default=True)
 parser.add_argument("--need_is", action="store_false", default=True)
@@ -133,8 +133,8 @@ def load_cfg():
     )
 
     # load criteria
-    criterion_g = load_loss_func(loss_type=opts.criterion_g, mode="gen")
-    criterion_d = load_loss_func(loss_type=opts.criterion_d, mode="dis")
+    criterion_g = load_loss_func(loss_type=opts.criterion_g, mode="gen").to(device)
+    criterion_d = load_loss_func(loss_type=opts.criterion_d, mode="dis").to(device)
 
     sampler = load_sampler(
         rtype=opts.rtype,
