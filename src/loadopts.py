@@ -82,6 +82,15 @@ def load_loss_func(
     if loss_type == "bce":
         from .loss_zoo import BCELoss
         loss_func = BCELoss(mode=mode, reduction=reduction)
+    elif loss_type == "hinge":
+        from .loss_zoo import HingeLoss
+        loss_func = HingeLoss(mode=mode, reduction=reduction)
+    elif loss_type == "ls":
+        from .loss_zoo import LeastSquaresLoss
+        loss_func = LeastSquaresLoss(mode=mode, reduction=reduction)
+    elif loss_type == "wloss":
+        from .loss_zoo import WLoss
+        loss_func = WLoss(mode=mode, reduction=reduction)
     else:
         raise LossNotDefineError(f"Loss {loss_type} is not defined.\n" \
                     f"Refer to the following: {load_loss_func.__doc__}")

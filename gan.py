@@ -10,7 +10,8 @@ import argparse
 from src.loadopts import *
 
 METHOD = "GAN"
-VALID_EPOCHS = 20
+SAVE_FREQ = 10
+VALID_FREQ = 20
 FMT = "{description}=" \
         "={dim_latent}" \
         "={criterion_g}-{learning_policy_g}-{optimizer_g}-{lr_g}-{rtype}" \
@@ -199,6 +200,23 @@ def load_cfg():
     return cfg, log_path
 
 
+def evaluate(coach):
+    imgs = coach.generator.evaluate(batch_size=10)
+    fp = imagemeter(imgs)
+    writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
+
+    fid_score, is_score = coach.evaluate(
+        dataset_type=opts.dataset,
+        n=opts.sampling_times,
+        batch_size=opts.e_batch_size,
+        n_splits=opts.e_splits,
+        need_fid=opts.need_fid,
+        need_is=opts.need_is
+    )
+    writter.add_scalars("Scores", {"FID":fid_score, "IS":is_score}, epoch)
+
+    print(f">>> Current FID score: {fid_score:.6f}")
+    print(f">>> Current IS  score: {is_score:.6f}")
 
 def main(
     coach, trainloader,
@@ -206,7 +224,7 @@ def main(
 ):
     from src.utils import save_checkpoint, imagemeter
     for epoch in range(start_epoch, opts.epochs):
-        if epoch % VALID_EPOCHS == 0:
+        if epoch % SAVE_FREQ == 0:
             save_checkpoint(
                 path=info_path,
                 state_dict={
@@ -215,31 +233,17 @@ def main(
                     "epoch": epoch
                 }
             )
-
-            imgs = coach.generator.evaluate(batch_size=10)
-            fp = imagemeter(imgs)
-            writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
-
-            fid_score, is_score = coach.evaluate(
-                dataset_type=opts.dataset,
-                n=opts.sampling_times,
-                batch_size=opts.e_batch_size,
-                n_splits=opts.e_splits,
-                need_fid=opts.need_fid,
-                need_is=opts.need_is
-            )
-            writter.add_scalars("Scores", {"FID":fid_score, "IS":is_score}, epoch)
-
-            print(f">>> Current FID score: {fid_score:.6f}")
-            print(f">>> Current IS  score: {is_score:.6f}")
+        
+        if epoch % VALID_FREQ == 0:
+            evaluate(coach)
+            
 
         loss_g, loss_d= coach.train(trainloader, epoch=epoch)
         writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, epoch)
+    
+    evaluate(coach)
 
-    imgs = coach.generator.evaluate(batch_size=10)
-    fp = imagemeter(imgs)
-    writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
-
+    
 
 if __name__ ==  "__main__":
     from torch.utils.tensorboard import SummaryWriter
