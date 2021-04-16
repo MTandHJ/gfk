@@ -44,8 +44,8 @@ class ProgressMeter:
         self.meters = list(meters)
         self.prefix = prefix
 
-    def display(self, *, epoch: int = 8888) -> None:
-        entries = [self.prefix + f"[Epoch: {epoch+1:<4d}]"]
+    def display(self, *, step: int = 8888) -> None:
+        entries = [self.prefix + f"[Step: {step:<4d}]"]
         entries += [str(meter) for meter in self.meters]
         print('\t'.join(entries))
 
@@ -127,7 +127,7 @@ def load(
 
 # save the checkpoint
 def save_checkpoint(path, state_dict: Dict) -> None:
-    path = path + "/model-optim-lr_sch-epoch.tar"
+    path = path + "/model-optim-lr_sch-step.tar"
     torch.save(
         state_dict,
         path
@@ -135,13 +135,13 @@ def save_checkpoint(path, state_dict: Dict) -> None:
 
 # load the checkpoint
 def load_checkpoint(path, models: Dict) -> int:
-    path = path + "/model-optim-lr_sch-epoch.tar"
+    path = path + "/model-optim-lr_sch-step.tar"
     checkpoints = torch.load(path)
     for key, model in models.items():
         checkpoint = checkpoints[key]
         model.load_state_dict(checkpoint)
-    epoch = checkpoints['epoch']
-    return epoch
+    step = checkpoints['step']
+    return step
 
 def set_seed(seed: int) -> None:
     from torch.backends import cudnn

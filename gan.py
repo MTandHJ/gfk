@@ -10,26 +10,36 @@ import argparse
 from src.loadopts import *
 
 METHOD = "GAN"
-SAVE_FREQ = 10
-VALID_FREQ = 20
+SAVE_FREQ = 2000
+PRINT_FREQ = 200
+VALID_FREQ = 500
 FMT = "{description}=" \
-        "={dim_latent}" \
-        "={criterion_g}-{learning_policy_g}-{optimizer_g}-{lr_g}-{rtype}" \
-        "={criterion_d}-{learning_policy_d}-{optimizer_d}-{lr_d}" \
-        "={batch_size}={transform}"
+        "={dim_latent}-{acml_per_step}" \
+        "={criterion_g}-{learning_policy_g}-{lr_g}-{steps_per_G}-{rtype}" \
+        "={criterion_d}-{learning_policy_d}-{lr_d}-{steps_per_D}-{aug_policy}" \
+        "={batch_size}"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("dataset", type=str)
 parser.add_argument("-g", "--generator", type=str, default="gan-g")
 parser.add_argument("-d", "--discriminator", type=str, default="gan-d")
 parser.add_argument("--dim_latent", type=int, default=128)
+parser.add_argument("-acml", "--acml_per_step", type=int, default=1,
+                help="accumulative iterations per step")
 
 # for generator
-parser.add_argument("-cg", "--criterion_g", type=str, default="bce")
+parser.add_argument("-cg", "--criterion_g", type=str, default="hinge")
 parser.add_argument("-og", "--optimizer_g", type=str, choices=("sgd", "adam"), default="adam")
 parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.0002)
 parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
+parser.add_argument("--ema", action="store_false", default=True, help="exponential moving average")
+parser.add_argument("--ema_mom", type=float, default=0.9999)
+parser.add_argument("--warmup_steps", type=int, default=1000)
+parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
+                help="total steps per G training procedure")
+
+# for sampiling policy
 parser.add_argument("--rtype", type=str, default="normal",
                 help="the sampling strategy")
 parser.add_argument("--low", type=float, default=0.)
@@ -38,13 +48,15 @@ parser.add_argument("--loc", type=float, default=0.)
 parser.add_argument("--scale", type=float, default=1.)
 
 # for discriminator
-parser.add_argument("-cd", "--criterion_d", type=str, default="bce")
+parser.add_argument("-cd", "--criterion_d", type=str, default="hinge")
 parser.add_argument("-od", "--optimizer_d", type=str, choices=("sgd", "adam"), default="adam")
-parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.002)
+parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.0002)
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
-parser.add_argument("--aug_policy", type=str, default="",
+parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="null",
                 help="choose augmentation policy from: color, translation and cutout")
+parser.add_argument("-spd", "--steps_per_D", type=int, default=5,
+                help="total steps per D training procedure")
 
 # for evaluation
 parser.add_argument("--sampling_times", type=int, default=10000)
@@ -63,7 +75,7 @@ parser.add_argument("-beta2", "--beta2", type=float, default=0.999,
                 help="the second beta argument for Adam")
 parser.add_argument("-wd", "--weight_decay", type=float, default=0.,
                 help="weight decay")
-parser.add_argument("--epochs", type=int, default=200)
+parser.add_argument("--steps", type=int, default=100000)
 parser.add_argument("-b", "--batch_size", type=int, default=64)
 parser.add_argument("--transform", type=str, default='default', 
                 help="the data augmentation which will be applied in training mode.")
@@ -102,7 +114,7 @@ def load_cfg():
         transform=opts.transform,
         train=True
     )
-    cfg['trainloader'] = load_dataloader(
+    trainloader = load_dataloader(
         dataset=trainset,
         batch_size=opts.batch_size,
         train=True,
@@ -125,12 +137,12 @@ def load_cfg():
     learning_policy_g = load_learning_policy(
         optimizer=optimizer_g, 
         learning_policy_type=opts.learning_policy_g,
-        T_max=opts.epochs
+        T_max=opts.steps
     )
     learning_policy_d = load_learning_policy(
         optimizer=optimizer_d, 
         learning_policy_type=opts.learning_policy_d,
-        T_max=opts.epochs
+        T_max=opts.steps
     )
 
     # load criteria
@@ -154,6 +166,9 @@ def load_cfg():
         criterion=criterion_g,
         optimizer=optimizer_g,
         learning_policy=learning_policy_g,
+        ema=opts.ema,
+        mom=opts.ema_mom,
+        warmup_steps=opts.warmup_steps
     )
     discriminator = Discriminator(
         arch=arch_d, device=device,
@@ -181,30 +196,31 @@ def load_cfg():
     )
     
     if opts.resume:
-        cfg['start_epoch'] = load_checkpoint(
+        cfg['start_step'] = load_checkpoint(
             path=cfg.info_path,
             models={"generator":generator, "discriminator":discriminator}
         )
     else:
-        cfg['start_epoch'] = 0
+        cfg['start_step'] = 0
 
 
     # load coach
     cfg['coach'] = Coach(
         generator=generator,
         discriminator=discriminator,
-        device=device,
-        inception_model=inception_model
+        inception_model=inception_model,
+        trainloader=trainloader,
+        device=device
     )
 
     return cfg, log_path
 
 
-def evaluate(coach, epoch):
+def evaluate(coach, step):
     from src.utils import imagemeter
     imgs = coach.generator.evaluate(batch_size=10)
     fp = imagemeter(imgs)
-    writter.add_figure(f"Image-Epoch:{epoch}", fp, global_step=epoch)
+    writter.add_figure(f"Image-Step:{step}", fp, global_step=step)
 
     fid_score, is_score = coach.evaluate(
         dataset_type=opts.dataset,
@@ -214,35 +230,43 @@ def evaluate(coach, epoch):
         need_fid=opts.need_fid,
         need_is=opts.need_is
     )
-    writter.add_scalars("Scores", {"FID":fid_score, "IS":is_score}, epoch)
+    writter.add_scalar("FID", fid_score, step)
+    writter.add_scalar("IS", is_score, step)
 
     print(f">>> Current FID score: {fid_score:.6f}")
     print(f">>> Current IS  score: {is_score:.6f}")
 
-def main(
-    coach, trainloader,
-    start_epoch, info_path
-):
+def main(coach, start_step, info_path):
     from src.utils import save_checkpoint
-    for epoch in range(start_epoch, opts.epochs):
-        if epoch % SAVE_FREQ == 0:
+    for step in range(start_step, opts.steps, opts.steps_per_G):
+        if step % SAVE_FREQ == 0:
             save_checkpoint(
                 path=info_path,
                 state_dict={
                     "generator":coach.generator.state_dict(),
                     "discriminator":coach.discriminator.state_dict(),
-                    "epoch": epoch
+                    "step": step
                 }
             )
         
-        if epoch % VALID_FREQ == 0:
-            evaluate(coach, epoch + 1)
+        if step % PRINT_FREQ == 0:
+            coach.progress.display(step=step+1)
+            coach.progress.step()
+        
+        if step % VALID_FREQ == 0:
+            evaluate(coach, step + 1)
             
 
-        loss_g, loss_d= coach.train(trainloader, epoch=epoch)
-        writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, epoch)
+        loss_g, loss_d= coach.train(
+            batch_size=opts.batch_size,
+            steps_per_G=opts.steps_per_G,
+            steps_per_D=opts.steps_per_D,
+            acml_per_step=opts.acml_per_step,
+            step=step
+        )
+        writter.add_scalars("Loss", {"generator":loss_g, "discriminator":loss_d}, step)
     
-    evaluate(coach, opts.epochs)
+    evaluate(coach, opts.steps)
 
     
 

@@ -64,15 +64,6 @@ OPTIMS = {
 
 # the learning schedular can be added here
 LEARNING_POLICY = {
-   "default": (
-        "MultiStepLR",
-        Config(
-            milestones=[100, 105],
-            gamma=0.1
-        ),
-        "Default leaning policy will be applied: " \
-        "decay the learning rate at 100 and 105 epochs by a factor 10."
-    ),
     "null": (
         "StepLR",
         Config(
@@ -85,7 +76,7 @@ LEARNING_POLICY = {
    "cosine":(   
         "CosineAnnealingLR",   
         Config(          
-            T_max=200,
+            T_max=100000,
             eta_min=0.,
             last_epoch=-1,
         ),

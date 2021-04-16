@@ -1,6 +1,6 @@
 
 
-from typing import Callable, TypeVar, Union, Optional, List, Tuple, Dict, Iterable
+from typing import Callable, TypeVar, Union, Optional, List, Tuple, Dict, Iterable, NoReturn
 import torch
 import torch.nn as nn
 from collections.abc import Iterable
@@ -20,12 +20,15 @@ class Coach:
         self, generator: Generator, 
         discriminator: Discriminator,
         inception_model: nn.Module,
-        device: torch.device
+        device: torch.device,
+        trainloader: Iterable
     ):
         self.generator = generator
         self.discriminator = discriminator
         self.inception_model = inception_model
         self.device = device
+        self.primeloader = trainloader
+        self.trainloader = iter(trainloader)
         self.loss_g = AverageMeter("Loss_G")
         self.loss_d = AverageMeter("Loss_D")
         self.progress = ProgressMeter(self.loss_g, self.loss_d)
@@ -34,44 +37,98 @@ class Coach:
         self.generator.save(path, postfix)
         self.discriminator.save(path, postfix)
 
-    def train(self, trainloader: Iterable, *, epoch: int = 8888) -> Tuple[float, float, float]:
-        self.progress.step() # reset the meter
-        for inputs_real, _ in trainloader:
-            batch_size = inputs_real.size(0)
-            inputs_real = inputs_real.to(self.device)
-            
-            # generator part
-            self.generator.on()
-            self.discriminator.off()
-            z = self.generator.sample(batch_size)
-            inputs_fake = self.generator(z)
-            outs_g = self.discriminator(inputs_fake)
-            loss_g = self.generator.criterion(outs_g) # real...
+    @property
+    def data(self):
+        try:
+            data = next(self.trainloader)
+        except StopIteration:
+            self.trainloader = iter(self.primeloader)
+            data = next(self.trainloader)
+        finally:
+            data = [item.to(self.device) for item in data]
+            return data
 
-            # update the generator
+    def _unitG(
+        self, 
+        cur_step: int,
+        batch_size: int, 
+        steps_per_G: int = 1, 
+        acml_per_step: int = 1
+    ) -> NoReturn:
+
+        self.generator.on()
+        self.discriminator.off()
+        for step in range(steps_per_G):
             self.generator.optimizer.zero_grad()
-            loss_g.backward()
+
+            for _ in range(acml_per_step):
+                z = self.generator.sample(batch_size)
+                inputs_fake = self.generator(z)
+                outs_g = self.discriminator(inputs_fake)
+                loss_g = self.generator.criterion(outs_g) # real...
+                loss_g.backward()
+
+                self.loss_g.update(loss_g.item(), n=batch_size, mode="mean")
+
             self.generator.optimizer.step()
+            self.generator.ema_update(step=cur_step + step)
+            self.generator.learning_policy.step()
 
-            # discriminator part
-            self.generator.off()
-            self.discriminator.on()
-            inputs = torch.cat((inputs_real, inputs_fake.detach()), dim=0)
-            outs_d = self.discriminator(inputs)
-            loss_d = self.discriminator.criterion(*outs_d.chunk(2))
+    def _unitD(
+        self, 
+        cur_step: int,
+        steps_per_D: int = 1, 
+        acml_per_step: int = 1
+    ) -> NoReturn:
 
-            # update the discriminator
+        self.generator.off()
+        self.discriminator.on()
+        for step in range(steps_per_D):
             self.discriminator.optimizer.zero_grad()
-            loss_d.backward()
-            self.discriminator.optimizer.step()
 
-            # log
-            self.loss_g.update(loss_g.item(), n=batch_size, mode="mean")
-            self.loss_d.update(loss_d.item(), n=batch_size, mode="mean")
+            for _ in range(acml_per_step):
+                inputs_real, _ = self.data
+                batch_size = inputs_real.size(0)
+                z = self.generator.sample(batch_size)
+                inputs_fake = self.generator(z)
+                inputs = torch.cat((inputs_real, inputs_fake), dim=0)
+                outs_d = self.discriminator(inputs)
+                loss_d = self.discriminator.criterion(*outs_d.chunk(2))
+                loss_d.backward()
+
+                self.loss_d.update(loss_d.item(), n=batch_size, mode="mean")
+
+            self.discriminator.optimizer.step()
+            self.discriminator.learning_policy.step()
         
-        self.progress.display(epoch=epoch)
-        self.generator.learning_policy.step()
-        self.discriminator.learning_policy.step()
+    def train(
+        self,
+        batch_size: int,
+        steps_per_G: int = 1,
+        steps_per_D: int = 1,
+        acml_per_step: int = 1,
+        *, step: int = 8888
+    ) -> Tuple[float, float]:
+        """
+        steps_per_G: total steps per G training procedure
+        steps_per_D: total steps per D training procedure
+        acml_per_step: accumulative iterations per step
+        """
+
+        # for Discriminator
+        self._unitD(
+            cur_step=step,
+            steps_per_D=steps_per_D,
+            acml_per_step=acml_per_step
+        )
+
+        # for Generator
+        self._unitG(
+            cur_step=step,
+            batch_size=batch_size,
+            steps_per_G=steps_per_G,
+            acml_per_step=acml_per_step
+        )
 
         return self.loss_g.avg, self.loss_d.avg
 
