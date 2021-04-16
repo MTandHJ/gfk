@@ -192,14 +192,15 @@ def load_normalizer(dataset_type: str) -> _Normalize:
     return normalizer
 
 
-def load_augmentor(aug_policy: str = '', channels_first: bool = True):
+def load_augmentor(aug_policy: str = 'null', channels_first: bool = True):
     """
     "null": no augmentation
     "diff_aug": differentiable augmentation
     """
-    if aug_policy is "null":
+    print(f">>> Applying augmentations: {aug_policy} ...")
+    if aug_policy == "null":
         return lambda x: x
-    elif aug_policy is "diff_aug":
+    elif aug_policy == "diff_aug":
         from .augmentation import DiffAugment
         return partial(DiffAugment, policy="color,translation,cutout", channels_first=channels_first)
     else:
