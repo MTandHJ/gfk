@@ -64,24 +64,23 @@ def load_inception(
     resize: bool = True, normalizer: Optional[Callable] = None
 ) -> Tuple[nn.Module, torch.device]:
 
-    files = os.listdir(path=PATH)
-    filename = None
-    for file_ in files:
-        if file_.startswith(INCEPTION_V3):
-            filename = file_
-            break
-    if filename is None:
+    file_ = os.path.join(INFO_PATH, INCEPTION_V3)
+    if not os.path.exists(file_):
         print(">>> No pre_trained model is found. Download from url ...")
         inception_model = inception_v3(pretrained=True, transform_input=False)
-        device, gpu(inception_model)
+        device = gpu(inception_model)
+        torch.save(
+            inception_model.state_dict(),
+            file_
+        )
     else:
-        print(f">>> Pre_trained model is found: {filename} ...")
+        print(f">>> Pre_trained model is found: {file_} ...")
         inception_model = Inception3(transform_input=False)
         device = gpu(inception_model)
         load(
             model=inception_model,
-            path=PATH,
-            filename=filename,
+            path=INFO_PATH,
+            filename=INCEPTION_V3,
             device=device
         )
     model = Net(arch=inception_model, resize=resize, normalizer=normalizer)

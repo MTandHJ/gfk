@@ -91,7 +91,7 @@ class Generator(GDtor):
         self.warmup_steps = warmup_steps
         if ema:
             # TODO: I'm not sure the following works all the time.
-            print("Adopting exponential moving average (EMA) ...")
+            print(">>> Adopting exponential moving average (EMA) ...")
             self.shadow = copy.deepcopy(arch)
             self.shadow.requires_grad_(False)
             self.shadow.eval()

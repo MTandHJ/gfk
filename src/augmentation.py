@@ -46,6 +46,7 @@ def DiffAugment(
     translation: translation
     cutout: cutout
     """
+    print(f">>> Applying augmentations: {policy} ...")
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)

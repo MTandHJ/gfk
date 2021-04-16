@@ -164,8 +164,7 @@ def export_pickle(data: Dict, filename: str) -> NoReturn:
         fh = open(filename, "wb")
         pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
     except (EnvironmentError, pickle.PicklingError) as err:
-        ExportError_ = type("ExportError", (Exception,), dict())
-        raise ExportError_(f"Export Error: {err}")
+        raise ExportError(f"Export Error: {err}")
     finally:
         if fh is not None:
             fh.close()
@@ -177,8 +176,7 @@ def import_pickle(filename: str) -> NoReturn:
         fh = open(filename, "rb")
         return pickle.load(fh)
     except (EnvironmentError, pickle.UnpicklingError) as err:
-        ImportError_ = type("ImportError", (Exception,), dict())
-        raise ImportError_(f"Import Error: {err}")
+        raise ImportError(f"Import Error: {err}")
     finally:
         if fh is not None:
             fh.close()

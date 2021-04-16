@@ -12,7 +12,7 @@ from src.loadopts import *
 METHOD = "GAN"
 SAVE_FREQ = 2000
 PRINT_FREQ = 200
-VALID_FREQ = 500
+VALID_FREQ = 2000
 FMT = "{description}=" \
         "={dim_latent}-{acml_per_step}" \
         "={criterion_g}-{learning_policy_g}-{lr_g}-{steps_per_G}-{rtype}" \
@@ -35,7 +35,7 @@ parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null",
                 help="learning rate scheduler defined in config.py")
 parser.add_argument("--ema", action="store_false", default=True, help="exponential moving average")
 parser.add_argument("--ema_mom", type=float, default=0.9999)
-parser.add_argument("--warmup_steps", type=int, default=1000)
+parser.add_argument("--ema_warmup", type=int, default=1000)
 parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
                 help="total steps per G training procedure")
 
@@ -121,7 +121,7 @@ def load_cfg():
         show_progress=opts.progress
     )
     normalizer = load_normalizer(dataset_type=opts.dataset)
-    augmentor = load_augmentor(policy=opts.aug_policy)
+    augmentor = load_augmentor(aug_policy=opts.aug_policy)
 
     # load optimizer and correspoding learning policy
     optimizer_g = load_optimizer(
@@ -168,7 +168,7 @@ def load_cfg():
         learning_policy=learning_policy_g,
         ema=opts.ema,
         mom=opts.ema_mom,
-        warmup_steps=opts.warmup_steps
+        warmup_steps=opts.ema_warmup
     )
     discriminator = Discriminator(
         arch=arch_d, device=device,
@@ -238,8 +238,8 @@ def evaluate(coach, step):
 
 def main(coach, start_step, info_path):
     from src.utils import save_checkpoint
-    for step in range(start_step, opts.steps, opts.steps_per_G):
-        if step % SAVE_FREQ == 0:
+    for freq, step in enumerate(range(start_step, opts.steps, opts.steps_per_G)):
+        if freq % SAVE_FREQ == 0:
             save_checkpoint(
                 path=info_path,
                 state_dict={
@@ -249,12 +249,12 @@ def main(coach, start_step, info_path):
                 }
             )
         
-        if step % PRINT_FREQ == 0:
-            coach.progress.display(step=step+1)
+        if freq % PRINT_FREQ == 0:
+            coach.progress.display(step=step)
             coach.progress.step()
         
-        if step % VALID_FREQ == 0:
-            evaluate(coach, step + 1)
+        if freq % VALID_FREQ == 0:
+            evaluate(coach, step)
             
 
         loss_g, loss_d= coach.train(

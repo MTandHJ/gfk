@@ -16,7 +16,7 @@ from scipy import linalg
 
 import os
 
-from .config import PATH
+from .config import INFO_PATH
 from .utils import load_inception
 from src.loadopts import load_dataset, load_dataloader, load_normalizer
 from src.utils import import_pickle, export_pickle
@@ -109,7 +109,10 @@ def fid_score_single(
     device:
     """
 
-    infos = import_pickle(os.path.join(PATH, ".".join((dataset_type, POSTFIX))))
+    try:
+        infos = import_pickle(os.path.join(INFO_PATH, ".".join((dataset_type, POSTFIX))))
+    except ImportError:
+        infos = prepare_fids(dataset_type, model, device)
     mu1, cov1 = infos['mu'], infos['cov']
     mu2, cov2 = _step(dataloader, model, device)
     return calculate_frechet_distance(mu1, cov1, mu2, cov2)
@@ -129,7 +132,10 @@ def fid_score_double(
     return calculate_frechet_distance(mu1, cov1, mu2, cov2)
 
 
-def prepare_fids(dataset_type: str, resize: bool = True, batch_size: int = 16) -> None:
+def prepare_fids(
+    dataset_type: str, inception_model: nn.Module, 
+    device: torch.device, batch_size: int = 16
+) -> None:
     """
     Prepare mean and cov of real dataset.
     The saved filename ends with ".fid".
@@ -139,13 +145,11 @@ def prepare_fids(dataset_type: str, resize: bool = True, batch_size: int = 16) -
     dataset = load_dataset(dataset_type)
     dataset = IgnoreLabelDataset(dataset)
     dataloader = load_dataloader(dataset, batch_size=batch_size)
-    normalizer = load_normalizer(dataset_type)
-
-    inception_model, device = load_inception(resize, normalizer)
 
     mu, cov = _step(dataloader, inception_model, device)
     infos = {'mu': mu, 'cov': cov}
-    filename = os.path.join(PATH, ".".join((dataset_type, POSTFIX)))
+    filename = os.path.join(INFO_PATH, ".".join((dataset_type, POSTFIX)))
     export_pickle(data=infos, filename=filename)
+    return infos
 
     

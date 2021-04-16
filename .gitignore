@@ -2,7 +2,7 @@
 
 infos/
 logs/
-metrics/pre_trained_models/
+metrics/infos/
 .vscode/
 simple_demo.py
 
