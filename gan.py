@@ -21,11 +21,13 @@ FMT = "{description}=" \
 
 parser = argparse.ArgumentParser()
 parser.add_argument("dataset", type=str)
-parser.add_argument("-g", "--generator", type=str, default="gan-g")
-parser.add_argument("-d", "--discriminator", type=str, default="gan-d")
+parser.add_argument("-g", "--generator", type=str, default="dcgan-g")
+parser.add_argument("-d", "--discriminator", type=str, default="dcgan-d")
 parser.add_argument("--dim_latent", type=int, default=128)
 parser.add_argument("-acml", "--acml_per_step", type=int, default=1,
                 help="accumulative iterations per step")
+parser.add_argument("--init_policy", choices=("ortho", "N02", "xavier", "kaiming"), default="N02",
+                help="initialize the model")
 
 # for generator
 parser.add_argument("-cg", "--criterion_g", type=str, default="hinge")
@@ -33,6 +35,8 @@ parser.add_argument("-og", "--optimizer_g", type=str, choices=("sgd", "adam"), d
 parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.0002)
 parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
+parser.add_argument("-sng", "--need_sn_g", action="store_false", default=True,
+                help="whether adopting spectral norm for generator")
 parser.add_argument("--ema", action="store_false", default=True, help="exponential moving average")
 parser.add_argument("--ema_mom", type=float, default=0.9999)
 parser.add_argument("--ema_warmup", type=int, default=1000)
@@ -53,6 +57,8 @@ parser.add_argument("-od", "--optimizer_d", type=str, choices=("sgd", "adam"), d
 parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.0002)
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
+parser.add_argument("-snd", "--need_sn_d", action="store_false", default=True,
+                help="whether adopting spectral norm for discriminator")
 parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="null",
                 help="choose augmentation policy from: color, translation and cutout")
 parser.add_argument("-spd", "--steps_per_D", type=int, default=5,
@@ -101,12 +107,15 @@ def load_cfg():
     # load model
     arch_g = load_model(model_type=opts.generator)(
         out_shape=get_shape(opts.dataset),
-        dim_input=opts.dim_latent
+        dim_latent=opts.dim_latent
     )
     arch_d = load_model(model_type=opts.discriminator)(
         in_shape=get_shape(opts.dataset)
     )
     device = gpu(arch_g, arch_d)
+    # initialization and spectral norm
+    refine_model(arch_g, init_policy=opts.init_policy, need_sn=opts.need_sn_g)
+    refine_model(arch_d, init_policy=opts.init_policy, need_sn=opts.need_sn_d)
 
     # load dataset
     trainset = load_dataset(

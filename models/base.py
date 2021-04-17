@@ -111,8 +111,9 @@ class Generator(GDtor):
         if not self.ema:
             return 0
         mom = 0. if step < self.warmup_steps else self.mom
+        shadow_state = self.shadow.state_dict()
         for key, source in self.arch.state_dict().items():
-            target = self.shadow.state_dict()[key]
+            target = shadow_state[key]
             data = target.data * mom + source.data * (1 - mom)
             target.data.copy_(data)
     

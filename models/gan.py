@@ -4,10 +4,10 @@ import torch.nn as nn
 
 
 
-class Generator(nn.Module):
+class Gen(nn.Module):
 
-    def __init__(self, out_shape, dim_input=128):
-        super(Generator, self).__init__()
+    def __init__(self, out_shape, dim_latent=128):
+        super(Gen, self).__init__()
 
         def block(in_features, out_features, normalize=True):
             layers = [nn.Linear(in_features, out_features)]
@@ -18,7 +18,7 @@ class Generator(nn.Module):
 
         self.out_shape = torch.tensor(out_shape)
         self.dense = nn.Sequential(
-            *block(dim_input, 128, normalize=False),
+            *block(dim_latent, 128, normalize=False),
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
@@ -32,10 +32,10 @@ class Generator(nn.Module):
         return img
 
 
-class Discriminator(nn.Module): 
+class Dis(nn.Module): 
 
     def __init__(self, in_shape):
-        super(Discriminator, self).__init__()
+        super(Dis, self).__init__()
 
         self.in_shape = torch.tensor(in_shape)
         self.dense = nn.Sequential(
@@ -51,14 +51,3 @@ class Discriminator(nn.Module):
         outs = self.dense(inputs_)
         return outs.squeeze()
 
-
-if __name__ == "__main__":
-    
-    generator = Generator((28, 28))
-    discriminator = Discriminator((28, 28))
-
-    z = torch.randn(10, 128)
-    imgs = generator(z)
-    print(imgs.size())
-    probs = discriminator(imgs)
-    print(probs)

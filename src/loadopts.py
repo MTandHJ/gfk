@@ -1,9 +1,11 @@
 
 
-from typing import TypeVar, Callable, Optional, Tuple, Dict, cast
+from typing import TypeVar, Callable, Optional, Tuple, Dict, cast, NoReturn
 import torch
 import torchvision
 import torchvision.transforms as T
+
+import os
 
 from functools import partial
 from tqdm import tqdm
@@ -41,8 +43,8 @@ def get_shape(dataset_type: str) -> Tuple:
 
 def load_model(model_type: str) -> Callable:
     types = {
-        "g": "Generator",
-        "d": "Discriminator"
+        "g": "Gen",
+        "d": "Dis"
     }
     name, model_type = model_type.split("-")
     module_name = "models." + name
@@ -54,6 +56,25 @@ def load_model(model_type: str) -> Callable:
        raise ModelNotDefineError(f"model {model_type} is not defined.\n" \
                     f"Refer to the following: {load_model.__doc__}\n")
     return cast(Callable, model)
+
+
+def refine_model(
+    model: torch.nn.Module, init_policy: Optional[str] = None, 
+    need_sn: bool = False, name: str = "weight",
+    n_power_iterations: int = 1, eps: float = 1e-12,
+    dim: Optional[int] = None,
+    basic_keys: Optional[set] = None,
+    except_keys: Optional[set] = None,
+) -> NoReturn:
+    from models.utils import spectral_norm, init_weights
+    if need_sn:
+        spectral_norm(
+            model, name,
+            n_power_iterations=n_power_iterations,
+            eps=eps, dim=dim,
+            basic_keys=basic_keys, except_keys=except_keys
+        )
+    init_weights(model, init_policy=init_policy)
 
 
 def load_inception_model(
@@ -159,6 +180,7 @@ def _dataset(
     mnist: MNIST
     cifar10: CIFAR-10
     cifar100: CIFAR-100
+    celeba: CelebA
     Transform:
     default: the default transform for each data set
     """
@@ -181,6 +203,11 @@ def _dataset(
     elif dataset_type == "cifar100":
         dataset = torchvision.datasets.CIFAR100(
             root=ROOT, train=train, download=False,
+            transform=transform
+        )
+    elif dataset_type == "celeba":
+        dataset = torchvision.datasets.ImageFolder(
+            root=os.path.join(ROOT, dataset_type),
             transform=transform
         )
         
