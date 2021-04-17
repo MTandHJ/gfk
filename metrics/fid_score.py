@@ -144,7 +144,10 @@ def prepare_fids(
     print(f">>> Prepare FID score of {dataset_type} ...")
     dataset = load_dataset(dataset_type)
     dataset = IgnoreLabelDataset(dataset)
-    dataloader = load_dataloader(dataset, batch_size=batch_size)
+    dataloader = load_dataloader(
+        dataset, batch_size=batch_size, 
+        shuffle=False, pin_memory=False
+    )
 
     mu, cov = _step(dataloader, inception_model, device)
     infos = {'mu': mu, 'cov': cov}

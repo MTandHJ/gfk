@@ -152,6 +152,8 @@ class Coach:
         dataloader = load_dataloader(
             dataset=dataset,
             batch_size=batch_size,
+            shuffle=False,
+            pin_memory=False
         )
         
         if need_fid:

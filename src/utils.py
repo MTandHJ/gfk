@@ -59,7 +59,7 @@ class ProgressMeter:
 def tensor2img(imgs: torch.Tensor, scale=(-1., 1.)) -> np.ndarray:
     imgs = imgs.detach()
     low, high = scale
-    imgs = (imgs + low) / (low + high)
+    imgs = (imgs - low) / (high - low)
     return imgs.cpu().numpy().transpose((0, 2, 3, 1))
 
 
@@ -166,7 +166,8 @@ def export_pickle(data: Dict, filename: str) -> NoReturn:
         fh = open(filename, "wb")
         pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
     except (EnvironmentError, pickle.PicklingError) as err:
-        raise ExportError(f"Export Error: {err}")
+        ExportError_ = type("ExportError", (Exception,), dict())
+        raise ExportError_(f"Export Error: {err}")
     finally:
         if fh is not None:
             fh.close()

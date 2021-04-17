@@ -83,8 +83,6 @@ parser.add_argument("-wd", "--weight_decay", type=float, default=0.,
                 help="weight decay")
 parser.add_argument("--steps", type=int, default=100000)
 parser.add_argument("-b", "--batch_size", type=int, default=64)
-parser.add_argument("--transform", type=str, default='default', 
-                help="the data augmentation which will be applied in training mode.")
 parser.add_argument("--resume", action="store_true", default=False)
 parser.add_argument("--progress", action="store_true", default=False, 
                 help="show the progress if true")
@@ -120,13 +118,12 @@ def load_cfg():
     # load dataset
     trainset = load_dataset(
         dataset_type=opts.dataset,
-        transform=opts.transform,
-        train=True
+        mode='train'
     )
     trainloader = load_dataloader(
         dataset=trainset,
         batch_size=opts.batch_size,
-        train=True,
+        shuffle=True,
         show_progress=opts.progress
     )
     augmentor = load_augmentor(aug_policy=opts.aug_policy)

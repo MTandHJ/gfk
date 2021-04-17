@@ -118,55 +118,6 @@ def load_loss_func(
     return loss_func
 
 
-def _get_transform(
-    dataset_type: str, 
-    transform: str, 
-) -> "transform":
-    return TRANSFORMS[dataset_type]
-
-
-def _dataset(
-    dataset_type: str, 
-    transform: str,  
-    train: bool = True
-) -> torch.utils.data.Dataset:
-    """
-    Dataset:
-    mnist: MNIST
-    cifar10: CIFAR-10
-    cifar100: CIFAR-100
-    celeba: CelebA
-    Transform:
-    default: the default transform for each data set
-    """
-    try:
-        transform = _get_transform(dataset_type, transform)
-    except KeyError:
-        raise DatasetNotIncludeError(f"Dataset {dataset_type} or transform {transform} is not included.\n" \
-                        f"Refer to the following: {_dataset.__doc__}")
-
-    if dataset_type == "mnist":
-        dataset = torchvision.datasets.MNIST(
-            root=ROOT, train=train, download=False,
-            transform=transform
-        )
-    elif dataset_type == "cifar10":
-        dataset = torchvision.datasets.CIFAR10(
-            root=ROOT, train=train, download=False,
-            transform=transform
-        )
-    elif dataset_type == "cifar100":
-        dataset = torchvision.datasets.CIFAR100(
-            root=ROOT, train=train, download=False,
-            transform=transform
-        )
-    elif dataset_type == "celeba":
-        dataset = torchvision.datasets.ImageFolder(
-            root=os.path.join(ROOT, dataset_type),
-            transform=transform
-        )
-        
-    return dataset
 
 def load_augmentor(aug_policy: str = 'null', channels_first: bool = True):
     """
@@ -186,10 +137,10 @@ def load_augmentor(aug_policy: str = 'null', channels_first: bool = True):
 
 def load_dataset(
     dataset_type: str, 
-    transform: str ='default', 
-    train: bool = True
+    mode: str = 'train'
 ) -> torch.utils.data.Dataset:
-    dataset = _dataset(dataset_type, transform, train)
+    from .datasets import LoadDataset
+    dataset = LoadDataset(dataset_type, mode=mode)
     return dataset
 
 
@@ -206,19 +157,16 @@ class _TQDMDataLoader(torch.utils.data.DataLoader):
 def load_dataloader(
     dataset: torch.utils.data.Dataset, 
     batch_size: int, 
-    train: bool = True, 
+    shuffle: bool = True,
+    num_workers: int = NUM_WORKERS,
+    pin_memory: bool = PIN_MEMORY,
     show_progress: bool = False
 ) -> torch.utils.data.DataLoader:
 
-    dataloader = _TQDMDataLoader if show_progress else torch.utils.data.DataLoader
-    if train:
-        dataloader = dataloader(dataset, batch_size=batch_size,
-                                        shuffle=True, num_workers=NUM_WORKERS,
-                                        pin_memory=PIN_MEMORY)
-    else:
-        dataloader = dataloader(dataset, batch_size=batch_size,
-                                        shuffle=False, num_workers=NUM_WORKERS,
-                                        pin_memory=PIN_MEMORY)
+    loader = _TQDMDataLoader if show_progress else torch.utils.data.DataLoader
+    dataloader = loader(dataset, batch_size=batch_size,
+                        shuffle=shuffle, num_workers=num_workers,
+                        pin_memory=pin_memory)
 
     return dataloader
 

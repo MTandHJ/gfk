@@ -11,6 +11,8 @@
 import torch.nn as nn
 import torchvision.transforms as T
 
+import os
+
 from .augmentation import DiffAug
 from .dict2obj import Config
 
@@ -18,6 +20,8 @@ from .dict2obj import Config
 
 # for saving
 ROOT = "../data"
+HDF5 = os.path.join(ROOT, "hdf5data")
+HDF5_POSFIX = "hdf5"
 INFO_PATH = "./infos/{method}/{dataset}-{generator}-{discriminator}/{description}"
 LOG_PATH = "./logs/{method}/{dataset}-{generator}-{discriminator}/{description}"
 TIMEFMT = "%m%d%H"
@@ -40,24 +44,21 @@ SHAPES = {
 
 
 TRANSFORMS = {
-    "mnist": T.Compose([
-        T.ToTensor(),
-        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ]),
-    "cifar10": T.Compose([
-        T.ToTensor(),
-        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ]),
-    "cifar100": T.Compose([
-        T.ToTensor(),
-        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ]),
-    "celeba": T.Compose([
+    "mnist": [T.ToTensor()],
+    "cifar10": [T.ToTensor()],
+    "cifar100": [T.ToTensor()],
+    "celeba": [ 
         T.Resize(SHAPES['celeba'][1:]),
         T.CenterCrop(SHAPES['celeba'][1:]),
-        T.ToTensor(),
-        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
+        T.ToTensor()
+    ]
+}
+
+NORMALIZATIONS = {
+    "mnist": T.Normalize((0.5,), (0.5,)),
+    "cifar10": T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    "cifar100": T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    "celeba": T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 }
 
 AUGMENTATIONS = {
