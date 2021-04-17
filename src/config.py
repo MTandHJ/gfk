@@ -35,7 +35,7 @@ SHAPES = {
     "mnist": (1, 28, 28),
     "cifar10": (3, 32, 32),
     "cifar100": (3, 32, 32),
-    "celeba": (3, 218, 178)
+    "celeba": (3, 64, 64)
 }
 
 
@@ -53,8 +53,8 @@ TRANSFORMS = {
         T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ]),
     "celeba": T.Compose([
-        T.Resize(64),
-        T.CenterCrop(64),
+        T.Resize(SHAPES['celeba'][1:]),
+        T.CenterCrop(SHAPES['celeba'][1:]),
         T.ToTensor(),
         T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])

@@ -113,14 +113,15 @@ def down(
         return out_size
     else:
         return down(
-            out_size, kernel_size, stride, padding,
-            blocks-1, dilation
+            out_size, blocks-1, 
+            kernel_size, stride, padding,
+            dilation
         )
 
 def up(
     in_size, blocks, 
     kernel_size, stride, padding,
-    dilation=1, output_padding=0
+    output_padding=0, dilation=1, 
 ):
     assert isinstance(blocks, int), "blocks should be integer"
     out_size = (in_size - 1) * stride - 2 * padding + dilation * (kernel_size -1) + \
@@ -129,25 +130,25 @@ def up(
         return out_size
     else:
         return up(
-            out_size, kernel_size, stride, padding,
-            blocks-1, dilation, output_padding
+            out_size, blocks-1, kernel_size, stride, padding,
+            output_padding, dilation
         )
 
 def setIn(
     out_size, blocks, 
     kernel_size, stride, padding,
-    dilation=1, output_padding=0
+    output_padding=0, dilation=1
 ):
     left = 1
     right = out_size
     while left < right:
         in_ = (left + right) // 2
-        out_ = up(in_, kernel_size, stride, padding, blocks, dilation, output_padding)
+        out_ = up(in_, blocks, kernel_size, stride, padding, output_padding, dilation)
         if out_ < out_size:
             left = in_ + 1
         else:
             right = in_
-    out_ = up(left, kernel_size, stride, padding, blocks, dilation, output_padding)
+    out_ = up(left, blocks, kernel_size, stride, padding, output_padding, dilation)
     if out_ != out_size:
         raise ValueError("No suitable in_size exists ...")
     return left
