@@ -23,7 +23,7 @@ class Gen(nn.Module):
             *block(256, 512),
             *block(512, 1024),
             nn.Linear(1024, int(self.out_shape.prod())),
-            nn.Sigmoid() # limiting the outputs in [0, 1]
+            nn.Tanh() # [-1, 1]
         )
 
     def forward(self, z):

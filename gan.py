@@ -44,12 +44,12 @@ parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
                 help="total steps per G training procedure")
 
 # for sampiling policy
-parser.add_argument("--rtype", type=str, default="normal",
-                help="the sampling strategy")
-parser.add_argument("--low", type=float, default=0.)
-parser.add_argument("--high", type=float, default=1.)
-parser.add_argument("--loc", type=float, default=0.)
-parser.add_argument("--scale", type=float, default=1.)
+parser.add_argument("--rtype", type=str, default="normal", help="the sampling strategy")
+parser.add_argument("--low", type=float, default=0., help="for uniform")
+parser.add_argument("--high", type=float, default=1., help="for uniform")
+parser.add_argument("--loc", type=float, default=0., help="for normal")
+parser.add_argument("--scale", type=float, default=1., help="for normal")
+parser.add_argument("--threshold", type=float, default=.5, help="for truncated normal")
 
 # for discriminator
 parser.add_argument("-cd", "--criterion_d", type=str, default="hinge")
@@ -129,7 +129,6 @@ def load_cfg():
         train=True,
         show_progress=opts.progress
     )
-    normalizer = load_normalizer(dataset_type=opts.dataset)
     augmentor = load_augmentor(aug_policy=opts.aug_policy)
 
     # load optimizer and correspoding learning policy
@@ -163,7 +162,8 @@ def load_cfg():
         low=opts.low,
         high=opts.high,
         loc=opts.loc,
-        scale=opts.scale
+        scale=opts.scale,
+        threshold=opts.threshold
     )
 
     # load generator
@@ -183,16 +183,13 @@ def load_cfg():
         arch=arch_d, device=device,
         criterion=criterion_d, 
         optimizer=optimizer_d,
-        normalizer=normalizer,
         augmentor=augmentor,
         learning_policy=learning_policy_d
     )
 
     # load the inception model for FID and IS evaluation
     if opts.need_fid or opts.need_is:
-        inception_model = load_inception_model(
-            resize=opts.resize, normalizer=normalizer
-        )
+        inception_model = load_inception_model(resize=opts.resize)
     else:
         inception_model = None
 
@@ -226,8 +223,9 @@ def load_cfg():
 
 
 def evaluate(coach, step):
-    from src.utils import imagemeter
+    from src.utils import imagemeter, tensor2img
     imgs = coach.generator.evaluate(batch_size=10)
+    imgs = tensor2img(imgs)
     fp = imagemeter(imgs)
     writter.add_figure(f"Image-Step:{step}", fp, global_step=step)
 

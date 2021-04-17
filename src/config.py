@@ -8,7 +8,10 @@
 
 
 
+import torch.nn as nn
 import torchvision.transforms as T
+
+from .augmentation import DiffAug
 from .dict2obj import Config
 
 
@@ -20,27 +23,6 @@ LOG_PATH = "./logs/{method}/{dataset}-{generator}-{discriminator}/{description}"
 TIMEFMT = "%m%d%H"
 SAVED_FILENAME = "Generator_paras.pt" # the filename of saved model
 
-
-basic properties of dataset
-MEANS = {
-    "mnist": None,
-    # "cifar10": [0.4914, 0.4824, 0.4467],
-    # "cifar100": [0.5071, 0.4867, 0.4408],
-    # "svhn": [0.5071, 0.4867, 0.4409],
-    "cifar10": (0.5, 0.5, 0.5),
-    "cifar100": (0.5, 0.5, 0.5),
-    "celeba": (0.5, 0.5, 0.5),
-}
-
-STDS = {
-    "mnist": None,
-    # "cifar10": [0.2471, 0.2435, 0.2617],
-    # "cifar100": [0.2675, 0.2565, 0.2761],
-    # "svhn": [0.2675, 0.2565, 0.2761]
-    "cifar10": (0.5, 0.5, 0.5),
-    "cifar100": (0.5, 0.5, 0.5),
-    "celeba": (0.5, 0.5, 0.5),
-}
 
 
 NUMCLASSES = {
@@ -54,6 +36,33 @@ SHAPES = {
     "cifar10": (3, 32, 32),
     "cifar100": (3, 32, 32),
     "celeba": (3, 218, 178)
+}
+
+
+TRANSFORMS = {
+    "mnist": T.Compose([
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ]),
+    "cifar10": T.Compose([
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ]),
+    "cifar100": T.Compose([
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ]),
+    "celeba": T.Compose([
+        T.Resize(64),
+        T.CenterCrop(64),
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+}
+
+AUGMENTATIONS = {
+    "null": nn.Identity(),
+    "diff_aug": DiffAug(policy="color,translation,cutout")
 }
 
 # env settings

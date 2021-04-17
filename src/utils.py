@@ -56,13 +56,15 @@ class ProgressMeter:
         for meter in self.meters:
             meter.reset()
 
+def tensor2img(imgs: torch.Tensor, scale=(-1., 1.)) -> np.ndarray:
+    imgs = imgs.detach()
+    low, high = scale
+    imgs = (imgs + low) / (low + high)
+    return imgs.cpu().numpy().transpose((0, 2, 3, 1))
+
 
 def imagemeter(*imgs):
     rows = len(imgs)
-    imgs = [
-        img.clone().detach().cpu().numpy().transpose((0, 2, 3, 1))
-        for img in imgs
-    ]
     cols = imgs[0].shape[0]
     fp = FreePlot((rows, cols), (cols, rows), dpi=100)
     for row in range(rows):

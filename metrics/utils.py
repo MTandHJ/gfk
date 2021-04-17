@@ -35,7 +35,7 @@ class Net(nn.Module):
         )
         self.resize = resize
         if normalizer is None:
-            self.normalizer = lambda x: x
+            self.normalizer = nn.Identity()
         else:
             self.normalizer = normalizer
 

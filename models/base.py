@@ -141,7 +141,6 @@ class Discriminator(GDtor):
         device: torch.device,
         criterion: Callable,
         optimizer: torch.optim.Optimizer, 
-        normalizer: Callable[[T], T],
         augmentor: Callable[[T], T],
         learning_policy: "learning rate policy"
     ):
@@ -152,12 +151,10 @@ class Discriminator(GDtor):
             learning_policy=learning_policy
         )
 
-        self.normalizer = normalizer
         self.augmentor = augmentor
 
     def forward(self, imgs: torch.Tensor, *others):
         imgs = self.augmentor(imgs)
-        imgs = self.normalizer(imgs)
         return self.arch(imgs, *others)
 
  

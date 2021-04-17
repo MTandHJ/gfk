@@ -93,7 +93,7 @@ class Gen(nn.Module):
         channels = Gen.CHANNELS + [c]
         in_channels = channels[:-1]
         out_channels = channels[1:]
-        activations = [activation] * (Gen.BLOCKS - 1) + ['sigmoid']
+        activations = [activation] * (Gen.BLOCKS - 1) + ['tanh']
 
         self.fC = in_channels[0]
         self.fH = setIn(h, blocks=Gen.BLOCKS, **Gen.DECONV_CFG)

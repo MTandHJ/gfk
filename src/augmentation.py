@@ -26,7 +26,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+
+from functools import partial
 
 
 
@@ -36,16 +39,18 @@ import torch.nn.functional as F
 
 
 
-def DiffAugment(
-    x: torch.Tensor, 
-    policy: str = '', 
-    channels_first: bool = True
-) -> torch.Tensor:
-    """
-    color: brightness,saturation,contrasat
-    translation: translation
-    cutout: cutout
-    """
+class DiffAug(nn.Module):
+
+    def __init__(self, policy=""):
+        super(DiffAug, self).__init__()
+
+        self.policy = policy
+
+    def forward(self, x):
+        return diffAugment(x, self.policy)
+
+
+def diffAugment(x, policy='', channels_first=True):
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)
@@ -107,9 +112,9 @@ def rand_cutout(x, ratio=0.5):
     x = x * mask.unsqueeze(1)
     return x
 
-
 AUGMENT_FNS = {
     'color': [rand_brightness, rand_saturation, rand_contrast],
     'translation': [rand_translation],
     'cutout': [rand_cutout],
 }
+

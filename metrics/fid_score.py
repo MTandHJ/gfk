@@ -18,7 +18,7 @@ import os
 
 from .config import INFO_PATH
 from .utils import load_inception
-from src.loadopts import load_dataset, load_dataloader, load_normalizer
+from src.loadopts import load_dataset, load_dataloader
 from src.utils import import_pickle, export_pickle
 
 

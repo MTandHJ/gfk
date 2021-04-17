@@ -5,6 +5,7 @@ import torch
 import torchvision
 import torchvision.transforms as T
 
+import numpy as np
 import os
 
 from functools import partial
@@ -78,11 +79,10 @@ def refine_model(
 
 
 def load_inception_model(
-    resize: bool = True,
-    normalizer: Optional[Callable] = None
+    resize: bool = True
 ):
     from metrics.utils import load_inception
-    return load_inception(resize=resize, normalizer=normalizer)[0]
+    return load_inception(resize=resize)[0]
 
 
 def load_loss_func(
@@ -118,56 +118,11 @@ def load_loss_func(
     return loss_func
 
 
-class _Normalize:
-
-    def __init__(
-        self, 
-        mean: Optional[Tuple]=None, 
-        std: Optional[Tuple]=None
-    ):
-        self.set_normalizer(mean, std)
-
-    def set_normalizer(self, mean, std):
-        if mean is None or std is None:
-            self.flag = False
-            return 0
-        self.flag = True
-        mean = torch.tensor(mean)
-        std = torch.tensor(std)
-        self.nat_normalize = T.Normalize(
-            mean=mean, std=std
-        )
-        self.inv_normalize = T.Normalize(
-            mean=-mean/std, std=1/std
-        )
-
-    def _normalize(self, imgs: torch.Tensor, inv: bool) -> torch.Tensor:
-        if not self.flag:
-            return imgs
-        if inv:
-            normalizer = self.inv_normalize
-        else:
-            normalizer = self.nat_normalize
-        new_imgs = [normalizer(img) for img in imgs]
-        return torch.stack(new_imgs)
-
-    def __call__(self, imgs: torch.Tensor, inv: bool = False) -> torch.Tensor:
-        # normalizer will set device automatically.
-        return self._normalize(imgs, inv)
-
-
-def _get_normalizer(dataset_type: str) -> _Normalize:
-    mean = MEANS[dataset_type]
-    std = STDS[dataset_type]
-    return _Normalize(mean, std)
-
-
 def _get_transform(
     dataset_type: str, 
     transform: str, 
-    train: bool = True
-) -> "augmentation":
-    return T.ToTensor()
+) -> "transform":
+    return TRANSFORMS[dataset_type]
 
 
 def _dataset(
@@ -185,7 +140,7 @@ def _dataset(
     default: the default transform for each data set
     """
     try:
-        transform = _get_transform(dataset_type, transform, train)
+        transform = _get_transform(dataset_type, transform)
     except KeyError:
         raise DatasetNotIncludeError(f"Dataset {dataset_type} or transform {transform} is not included.\n" \
                         f"Refer to the following: {_dataset.__doc__}")
@@ -213,26 +168,20 @@ def _dataset(
         
     return dataset
 
-
-def load_normalizer(dataset_type: str) -> _Normalize:
-    normalizer = _get_normalizer(dataset_type)
-    return normalizer
-
-
 def load_augmentor(aug_policy: str = 'null', channels_first: bool = True):
     """
     "null": no augmentation
     "diff_aug": differentiable augmentation
     """
     print(f">>> Applying augmentations: {aug_policy} ...")
-    if aug_policy == "null":
-        return lambda x: x
-    elif aug_policy == "diff_aug":
-        from .augmentation import DiffAugment
-        return partial(DiffAugment, policy="color,translation,cutout", channels_first=channels_first)
-    else:
+    try:
+        augmentor = AUGMENTATIONS[aug_policy]
+
+    except KeyError:
         raise NotImplementedError(f"No such augmentation: {aug_policy} ...\n" \
             f"Refer to the following: {load_augmentor.__doc__}")
+    finally:
+        return augmentor
 
 
 def load_dataset(
@@ -342,22 +291,26 @@ def load_sampler(
     high: float = 1.,
     loc: float = 0.,
     scale: float = 1.,
-    rsample=False
+    threshold: float = 1.
 ):
     """
     uniform: (low, high)
     normal: (loc, scale)
+    truncate normal: threshold
     """
     if rtype == "uniform":
-        sampler = torch.distributions.uniform.Uniform(low=low, high=high)
+        sampler = torch.distributions.uniform.Uniform(low=low, high=high).sample
     elif rtype == "normal":
-        sampler = torch.distributions.normal.Normal(loc=loc, scale=scale)
+        sampler = torch.distributions.normal.Normal(loc=loc, scale=scale).sample
+    elif rtype == "tnormal":
+        from scipy.stats import truncnorm
+        def truncated_normal(size, threshold=1.):
+            values = truncnorm.rvs(-threshold, threshold, size=size)
+            return torch.FloatTensor(values)
+        sampler = partial(truncated_normal, threshold=threshold)
     else:
         raise NotImplementedError(f"No such sampler: {rtype}. \n " \
             f"Refer to the following: {load_sampler.__doc__}")
-
-    rsample = "rsample" if rsample else "sample"
-    sampler = getattr(sampler, rsample)
     return sampler
 
 

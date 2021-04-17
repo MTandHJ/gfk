@@ -65,7 +65,8 @@ def choose_activation(activation: str) -> nn.Module:
         "leakyrelu": partial(nn.LeakyReLU, negative_slope=0.2, inplace=True),
         "elu": partial(nn.ELU, alpha=1., inplace=True),
         "gelu": nn.GELU,
-        'sigmoid': nn.Sigmoid
+        'sigmoid': nn.Sigmoid,
+        "tanh": nn.Tanh
     }
 
     try:
