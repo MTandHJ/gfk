@@ -33,7 +33,7 @@ class Coach:
         self.loss_d = AverageMeter("Loss_D")
         self.progress = ProgressMeter(self.loss_g, self.loss_d)
 
-    def save(self, path: str, postfix: str = '') -> None:
+    def save(self, path: str, postfix: str = '') -> NoReturn:
         self.generator.save(path, postfix)
         self.discriminator.save(path, postfix)
 
@@ -65,14 +65,14 @@ class Coach:
                 z = self.generator.sample(batch_size)
                 inputs_fake = self.generator(z)
                 outs_g = self.discriminator(inputs_fake)
-                loss_g = self.generator.criterion(outs_g) # real...
+                loss_g = self.generator.criterion(outs_g)
                 loss_g.backward()
 
                 self.loss_g.update(loss_g.item(), n=batch_size, mode="mean")
 
             self.generator.optimizer.step()
-            self.generator.ema_update(step=cur_step + step)
             self.generator.learning_policy.step()
+            self.generator.ema_update(step=cur_step + step)
 
     def _unitD(
         self, 
@@ -87,7 +87,7 @@ class Coach:
             self.discriminator.optimizer.zero_grad()
 
             for _ in range(acml_per_step):
-                inputs_real, _ = self.data
+                inputs_real = self.data[0]
                 batch_size = inputs_real.size(0)
                 z = self.generator.sample(batch_size)
                 inputs_fake = self.generator(z)
@@ -142,8 +142,8 @@ class Coach:
         need_is: bool = True
     ):
 
-        fid_score = -1
-        is_score = -1
+        fid_score = -1.
+        is_score = -1.
         data = []
         for _ in range(0, n, batch_size):
             data.append(self.generator.evaluate(batch_size=batch_size).detach().cpu())

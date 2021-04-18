@@ -36,7 +36,7 @@ def spectral_norm(
     model: nn.Module,
     name: str = 'weight',
     n_power_iterations: int = 1,
-    eps: float = 1e-12,
+    eps: float = 1e-6,
     dim: Optional[int] = None,
     basic_keys: Optional[Tuple] = None,
     except_keys: Optional[Tuple] = None
@@ -84,7 +84,7 @@ def init_weights(model, init_policy=None) -> int:
     if init_policy == "ortho":
         doer = nn.init.orthogonal_
     elif init_policy == "xavier":
-        doer = nn.init.xavier_normal_
+        doer = nn.init.xavier_uniform_
     elif init_policy == "kaming":
         doer = nn.init.kaiming_normal_
     elif init_policy == "N02":

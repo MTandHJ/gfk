@@ -96,14 +96,14 @@ class Generator(GDtor):
             self.shadow.requires_grad_(False)
             self.shadow.eval()
         else:
-            self.shadow = arch
+            self.shadow = self.arch
     
     def save(self, path: str, postfix: str = "") -> None:
         torch.save(self.shadow.state_dict(), 
             os.path.join(path, f"{self.__class__.__name__}{postfix}_paras.pt"))
         if self.ema:
             postfix = "_prime" + postfix
-            torch.save(self.shadow.state_dict(), 
+            torch.save(self.arch.state_dict(), 
                 os.path.join(path, f"{self.__class__.__name__}{postfix}_paras.pt"))
 
     @torch.no_grad()

@@ -1,5 +1,12 @@
 
 
+"""
+Reference:
+ajbrock
+BigGAN-PyTorch
+https://github.com/ajbrock/BigGAN-PyTorch
+"""
+
 from typing import NoReturn, Tuple, List
 import torch
 from torch.utils.data import Dataset, DataLoader

@@ -63,7 +63,7 @@ def load_model(model_type: str) -> Callable:
 def refine_model(
     model: torch.nn.Module, init_policy: Optional[str] = None, 
     need_sn: bool = False, name: str = "weight",
-    n_power_iterations: int = 1, eps: float = 1e-12,
+    n_power_iterations: int = 1, eps: float = 1e-6,
     dim: Optional[int] = None,
     basic_keys: Optional[set] = None,
     except_keys: Optional[set] = None,
@@ -259,7 +259,7 @@ def load_sampler(
     loc: float = 0.,
     scale: float = 1.,
     threshold: float = 1.
-):
+) -> Callable:
     """
     uniform: (low, high)
     normal: (loc, scale)

@@ -17,21 +17,21 @@ from .config import *
 from src.utils import load, gpu
 
 
-def _feature_hook(module, input, output, log):
-    log.features = input[0]
+def _feature_hook(module, input, output, logger):
+    logger.features = input[0]
 
-class Net(nn.Module):
+class _Net(nn.Module):
 
     def __init__(
         self, arch: nn.Module, 
         resize: bool = True, normalizer: Callable = None
     ):
-        super(Net, self).__init__()
+        super(_Net, self).__init__()
 
         self.features = None
         self.arch = arch
         self.arch.fc.register_forward_hook(
-            partial(_feature_hook, log=self)
+            partial(_feature_hook, logger=self)
         )
         self.resize = resize
         if normalizer is None:
@@ -83,7 +83,7 @@ def load_inception(
             filename=INCEPTION_V3,
             device=device
         )
-    model = Net(arch=inception_model, resize=resize, normalizer=normalizer)
+    model = _Net(arch=inception_model, resize=resize, normalizer=normalizer)
     return model, device
         
 

@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-"""
-Goodfellow I., Pouget-Abadie J., Mirza M., Xu B., Warde-Farley D., Ozair S., Courville A. & Bengio Yoshua. 
-Generative adversarial nets. ICLR, 2014.
-"""
 
 
 import argparse
@@ -52,7 +48,7 @@ parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
 # for sampiling policy
 parser.add_argument("--rtype", type=str, choices=("uniform", "normal", "tnormal"), 
                 default="tnormal", help="the sampling strategy")
-parser.add_argument("--low", type=float, default=0., help="for uniform")
+parser.add_argument("--low", type=float, default=-1., help="for uniform")
 parser.add_argument("--high", type=float, default=1., help="for uniform")
 parser.add_argument("--loc", type=float, default=0., help="for normal")
 parser.add_argument("--scale", type=float, default=1., help="for normal")
