@@ -44,7 +44,8 @@ parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
                 help="total steps per G training procedure")
 
 # for sampiling policy
-parser.add_argument("--rtype", type=str, default="normal", help="the sampling strategy")
+parser.add_argument("--rtype", type=str, choices=("uniform", "normal", "tnormal"), 
+                default="tnormal", help="the sampling strategy")
 parser.add_argument("--low", type=float, default=0., help="for uniform")
 parser.add_argument("--high", type=float, default=1., help="for uniform")
 parser.add_argument("--loc", type=float, default=0., help="for normal")
@@ -59,9 +60,9 @@ parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null",
                 help="learning rate scheduler defined in config.py")
 parser.add_argument("-snd", "--need_sn_d", action="store_false", default=True,
                 help="whether adopting spectral norm for discriminator")
-parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="null",
+parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="diff_aug",
                 help="choose augmentation policy from: color, translation and cutout")
-parser.add_argument("-spd", "--steps_per_D", type=int, default=5,
+parser.add_argument("-spd", "--steps_per_D", type=int, default=2,
                 help="total steps per D training procedure")
 
 # for evaluation

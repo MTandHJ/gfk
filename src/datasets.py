@@ -68,7 +68,7 @@ def check_hdf5(filename: str):
 
 def make_hdf5(
     dataset, filename: str, 
-    batch_size: int = 256, chunks: int = 256
+    batch_size: int = 256, chunks: int = 512
 ) -> NoReturn:
     exists, file_ = check_hdf5(filename)
     if exists:
@@ -112,16 +112,6 @@ def make_hdf5(
             f['target'][-bsz:] = target
     
 
-def load_hdf5(filename: str) -> Tuple[np.ndarray]:
-    exists, file_ = check_hdf5(filename)
-    if not exists:
-        raise FileNotFoundError(f"No such file exists {filename} ...")
-    with h5.File(file_, "r") as f:
-        data, target = f['data'][...], f['target'][...]
-    data = data.astype(np.float32) / 255.
-    return data, target
-
-
 class LoadDataset(Dataset):
 
     def __init__(
@@ -130,9 +120,8 @@ class LoadDataset(Dataset):
         mode: str = "train"
     ):
         filename = "_".join((dataset_type, mode))
-        try:
-            self.data, self.target = load_hdf5(filename)
-        except FileNotFoundError:
+        exists, file_ = check_hdf5(filename)
+        if not exists:
             print("HDF5 file is not found ...")
             dataset = _dataset(
                 dataset_type=dataset_type,
@@ -142,18 +131,20 @@ class LoadDataset(Dataset):
                 dataset=dataset,
                 filename=filename
             )
-            self.data, self.target = load_hdf5(filename)
-
+        self.file = file_
+        with h5.File(self.file, mode='r') as f:
+            self.datasize = len(f['target'])
         self.normalizer = NORMALIZATIONS[dataset_type]
 
     def __len__(self):
-        return len(self.data)
+        return self.datasize
 
     def __getitem__(self, idx):
-        img = self.data[index]
-        img = self.normalizer(torch.from_numpy(img))
+        with h5.File(self.file, mode='r') as f:
+            img = f['data'][idx]
+            img = self.normalizer(torch.from_numpy(img).float() / 255)
 
-        label = self.target[index]
-        label = int(label)
+            label = f['target'][idx]
+            label = int(label)
         return img, label
 

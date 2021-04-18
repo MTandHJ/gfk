@@ -10,6 +10,7 @@ import os
 
 from functools import partial
 from tqdm import tqdm
+import time
 
 
 
@@ -139,6 +140,10 @@ def load_dataset(
     dataset_type: str, 
     mode: str = 'train'
 ) -> torch.utils.data.Dataset:
+    """
+    dataset_type: mnist, cifar10, celeba ...
+    mode: train, valid, test
+    """
     from .datasets import LoadDataset
     dataset = LoadDataset(dataset_type, mode=mode)
     return dataset
@@ -244,7 +249,7 @@ def load_sampler(
     """
     uniform: (low, high)
     normal: (loc, scale)
-    truncate normal: threshold
+    tnormal (truncate normal): threshold
     """
     if rtype == "uniform":
         sampler = torch.distributions.uniform.Uniform(low=low, high=high).sample
@@ -279,7 +284,8 @@ def generate_path(
         dataset=dataset_type,
         generator=generator,
         discriminator=discriminator,
-        description=description
+        description=description,
+        time=time.strftime(TIMEFMT)
     )
     return info_path, log_path
 

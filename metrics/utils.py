@@ -66,7 +66,7 @@ def load_inception(
 
     file_ = os.path.join(INFO_PATH, INCEPTION_V3)
     if not os.path.exists(file_):
-        print(">>> No pre_trained model is found. Download from url ...")
+        print(">>> Inception model is not found. Download from url ...")
         inception_model = inception_v3(pretrained=True, transform_input=False)
         device = gpu(inception_model)
         torch.save(
@@ -74,7 +74,7 @@ def load_inception(
             file_
         )
     else:
-        print(f">>> Pre_trained model is found: {file_} ...")
+        print(f">>> Inception model is found: {file_} ...")
         inception_model = Inception3(transform_input=False)
         device = gpu(inception_model)
         load(

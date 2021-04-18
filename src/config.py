@@ -23,7 +23,7 @@ ROOT = "../data"
 HDF5 = os.path.join(ROOT, "hdf5data")
 HDF5_POSFIX = "hdf5"
 INFO_PATH = "./infos/{method}/{dataset}-{generator}-{discriminator}/{description}"
-LOG_PATH = "./logs/{method}/{dataset}-{generator}-{discriminator}/{description}"
+LOG_PATH = "./logs/{method}/{dataset}-{generator}-{discriminator}/{description}-{time}"
 TIMEFMT = "%m%d%H"
 SAVED_FILENAME = "Generator_paras.pt" # the filename of saved model
 
