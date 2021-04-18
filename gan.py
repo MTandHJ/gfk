@@ -226,9 +226,8 @@ def load_cfg():
 
 def evaluate(coach, step):
     from src.utils import imagemeter, tensor2img
-    imgs = coach.generator.evaluate(batch_size=10)
-    imgs = tensor2img(imgs)
-    fp = imagemeter(imgs)
+    imgs = [tensor2img(coach.generator.evaluate(batch_size=10)) for _ in range(4)]
+    fp = imagemeter(*imgs)
     writter.add_figure(f"Image-Step:{step}", fp, global_step=step)
 
     fid_score, is_score = coach.evaluate(
