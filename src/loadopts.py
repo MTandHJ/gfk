@@ -138,14 +138,28 @@ def load_augmentor(aug_policy: str = 'null', channels_first: bool = True):
 
 def load_dataset(
     dataset_type: str, 
-    mode: str = 'train'
+    mode: str = 'train',
+    hdf5: bool = True,
+    mv2memory: bool = False
 ) -> torch.utils.data.Dataset:
     """
     dataset_type: mnist, cifar10, celeba ...
     mode: train, valid, test
     """
-    from .datasets import LoadDataset
-    dataset = LoadDataset(dataset_type, mode=mode)
+    from .datasets import LoadPrimeDataset, LoadHDF5Dataset
+    if hdf5:
+        print(">>> Load HDF5 dataset ...")
+        dataset = LoadHDF5Dataset(
+            dataset_type=dataset_type,
+            mode=mode,
+            mv2memory=mv2memory
+        )
+    else:
+        print(">>> Load prime dataset ...")
+        dataset = LoadPrimeDataset(
+            dataset_type=dataset_type,
+            mode=mode
+        )
     return dataset
 
 

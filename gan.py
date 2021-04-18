@@ -21,6 +21,12 @@ FMT = "{description}=" \
 
 parser = argparse.ArgumentParser()
 parser.add_argument("dataset", type=str)
+parser.add_argument("-h5", "--hdf5", action="store_false", default=True,
+                help="whether to load hdf5 dataset")
+parser.add_argument("-m2m", "--mv2memory", action="store_true", default=False,
+                help="whether to move the total data to memory")
+
+# for model
 parser.add_argument("-g", "--generator", type=str, default="dcgan-g")
 parser.add_argument("-d", "--discriminator", type=str, default="dcgan-d")
 parser.add_argument("--dim_latent", type=int, default=128)
@@ -119,7 +125,9 @@ def load_cfg():
     # load dataset
     trainset = load_dataset(
         dataset_type=opts.dataset,
-        mode='train'
+        mode='train',
+        hdf5=opts.hdf5,
+        mv2memory=opts.mv2memory
     )
     trainloader = load_dataloader(
         dataset=trainset,
