@@ -25,21 +25,21 @@ parser.add_argument("-m2m", "--mv2memory", action="store_true", default=False,
 # for model
 parser.add_argument("-g", "--generator", type=str, default="dcgan-g")
 parser.add_argument("-d", "--discriminator", type=str, default="dcgan-d")
-parser.add_argument("--dim_latent", type=int, default=128)
+parser.add_argument("--dim_latent", type=int, default=100)
 parser.add_argument("-acml", "--acml_per_step", type=int, default=1,
                 help="accumulative iterations per step")
 parser.add_argument("--init_policy", choices=("ortho", "N02", "xavier", "kaiming"), default="N02",
                 help="initialize the model")
 
 # for generator
-parser.add_argument("-cg", "--criterion_g", type=str, default="hinge")
+parser.add_argument("-cg", "--criterion_g", type=str, default="bce")
 parser.add_argument("-og", "--optimizer_g", type=str, choices=("sgd", "adam"), default="adam")
 parser.add_argument("-lrg", "--lr_g", "--LR_G", "--learning_rate_g", type=float, default=0.0002)
 parser.add_argument("-lpg", "--learning_policy_g", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
-parser.add_argument("-sng", "--need_sn_g", action="store_false", default=True,
+parser.add_argument("-sng", "--need_sn_g", action="store_true", default=False,
                 help="whether adopting spectral norm for generator")
-parser.add_argument("--ema", action="store_false", default=True, help="exponential moving average")
+parser.add_argument("--ema", action="store_true", default=False, help="exponential moving average")
 parser.add_argument("--ema_mom", type=float, default=0.9999)
 parser.add_argument("--ema_warmup", type=int, default=1000)
 parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
@@ -47,7 +47,7 @@ parser.add_argument("-spg", "--steps_per_G", type=int, default=1,
 
 # for sampiling policy
 parser.add_argument("--rtype", type=str, choices=("uniform", "normal", "tnormal"), 
-                default="tnormal", help="the sampling strategy")
+                default="normal", help="the sampling strategy")
 parser.add_argument("--low", type=float, default=-1., help="for uniform")
 parser.add_argument("--high", type=float, default=1., help="for uniform")
 parser.add_argument("--loc", type=float, default=0., help="for normal")
@@ -55,21 +55,21 @@ parser.add_argument("--scale", type=float, default=1., help="for normal")
 parser.add_argument("--threshold", type=float, default=.5, help="for truncated normal")
 
 # for discriminator
-parser.add_argument("-cd", "--criterion_d", type=str, default="hinge")
+parser.add_argument("-cd", "--criterion_d", type=str, default="bce")
 parser.add_argument("-od", "--optimizer_d", type=str, choices=("sgd", "adam"), default="adam")
 parser.add_argument("-lrd", "--lr_d", "--LR_D", "--learning_rate_d", type=float, default=0.0002)
 parser.add_argument("-lpd", "--learning_policy_d", type=str, default="null", 
                 help="learning rate scheduler defined in config.py")
-parser.add_argument("-snd", "--need_sn_d", action="store_false", default=True,
+parser.add_argument("-snd", "--need_sn_d", action="store_true", default=False,
                 help="whether adopting spectral norm for discriminator")
-parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="diff_aug",
+parser.add_argument("--aug_policy", choices=("null", "diff_aug"), default="null",
                 help="choose augmentation policy from: color, translation and cutout")
-parser.add_argument("-spd", "--steps_per_D", type=int, default=2,
+parser.add_argument("-spd", "--steps_per_D", type=int, default=1,
                 help="total steps per D training procedure")
 
 # for evaluation
 parser.add_argument("--sampling_times", type=int, default=10000)
-parser.add_argument("--e_batch_size", type=int, default=64)
+parser.add_argument("--e_batch_size", type=int, default=128)
 parser.add_argument("--e_splits", type=int, default=10)
 parser.add_argument("--resize", action="store_false", default=True)
 parser.add_argument("--need_fid", action="store_false", default=True)
@@ -84,12 +84,12 @@ parser.add_argument("-beta2", "--beta2", type=float, default=0.999,
                 help="the second beta argument for Adam")
 parser.add_argument("-wd", "--weight_decay", type=float, default=0.,
                 help="weight decay")
-parser.add_argument("--steps", type=int, default=100000)
-parser.add_argument("-b", "--batch_size", type=int, default=64)
+parser.add_argument("--steps", type=int, default=8000)
+parser.add_argument("-b", "--batch_size", type=int, default=128)
 parser.add_argument("--resume", action="store_true", default=False)
 parser.add_argument("--progress", action="store_true", default=False, 
                 help="show the progress if true")
-parser.add_argument("--seed", type=int, default=1)
+parser.add_argument("--seed", type=int, default=1, help="set seed randomly if seed == -1")
 parser.add_argument("-m", "--description", type=str, default="GAN")
 opts = parser.parse_args()
 opts.description = FMT.format(**opts.__dict__)
