@@ -95,10 +95,13 @@ def init_weights(model, init_policy=None) -> int:
     for module in model.modules():
         if isinstance(module, INIT_KEYS):
             try:
-                doer(module.weight)
+                doer(module.weight.data)
                 module.bias.data.fill_(0.)
             except AttributeError:
                 continue
+        elif isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d)):
+            nn.init.normal_(module.weight.data, 1., 0.02)
+            nn.init.constant_(module.bias.data, 0.)
     return 1
 
 

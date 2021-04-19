@@ -60,7 +60,7 @@ class BCELoss(LossFunc):
         assert outs_real.size(0) == outs_fake.size(0), \
             f"the batch size of outs_real: {outs_real.size(0)} " \
             f"doesnot match that of outs_fake: {outs_fake.size(0)}"
-        return -F.logsigmoid(outs_real) - F.logsigmoid(1 - outs_fake)
+        return -F.logsigmoid(outs_real) - (1 - outs_fake.sigmoid()).log()
 
 class HingeLoss(LossFunc):
     """

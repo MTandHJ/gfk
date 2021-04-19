@@ -91,9 +91,9 @@ class Coach:
                 batch_size = inputs_real.size(0)
                 z = self.generator.sample(batch_size)
                 inputs_fake = self.generator(z)
-                inputs = torch.cat((inputs_real, inputs_fake), dim=0)
-                outs_d = self.discriminator(inputs)
-                loss_d = self.discriminator.criterion(*outs_d.chunk(2))
+                outs_real = self.discriminator(inputs_real)
+                outs_fake = self.discriminator(inputs_fake)
+                loss_d = self.discriminator.criterion(outs_real, outs_fake)
                 loss_d.backward()
 
                 self.loss_d.update(loss_d.item(), n=batch_size, mode="mean")

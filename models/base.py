@@ -31,7 +31,8 @@ class GDtor(nn.Module):
         self.arch.requires_grad_(True)
 
     def off(self) -> None:
-        self.arch.eval()
+        # self.arch.eval()
+        self.arch.train()
         self.arch.requires_grad_(False)
 
     def save(self, path: str, postfix: str = "") -> None:
