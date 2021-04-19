@@ -59,25 +59,6 @@ def spectral_norm(
                 print(f"Skip module {name_} as missing attrs {name} ...")
 
 
-def choose_activation(activation: str) -> nn.Module:
-    activations = {
-        "relu": partial(nn.ReLU, inplace=True),
-        "leakyrelu": partial(nn.LeakyReLU, negative_slope=0.2, inplace=True),
-        "elu": partial(nn.ELU, alpha=1., inplace=True),
-        "gelu": nn.GELU,
-        'sigmoid': nn.Sigmoid,
-        "tanh": nn.Tanh
-    }
-
-    try:
-        activation = activations[activation]
-    except KeyError as e:
-        print(f"No such activation {activation} ...")
-        raise KeyError(e)
-    return activation()
-
-
-
 def init_weights(model, init_policy=None) -> int:
     print(">>> initialize the weights ...")
     doer: Callable
@@ -158,3 +139,19 @@ def setIn(
 
 setOut = down
 
+def setAct(activation: str) -> nn.Module:
+    activations = {
+        "relu": partial(nn.ReLU, inplace=True),
+        "leakyrelu": partial(nn.LeakyReLU, negative_slope=0.2, inplace=True),
+        "elu": partial(nn.ELU, alpha=1., inplace=True),
+        "gelu": nn.GELU,
+        'sigmoid': nn.Sigmoid,
+        "tanh": nn.Tanh
+    }
+
+    try:
+        activation = activations[activation]
+    except KeyError as e:
+        print(f"No such activation {activation} ...")
+        raise KeyError(e)
+    return activation()

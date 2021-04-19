@@ -5,34 +5,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def reduce_wrapper(func, reduction="mean", **kwargs):
-    def wrapper(*args, **newkwargs):
-        newkwargs.update(kwargs)
-        loss = func(*args, **newkwargs)
-        if reduction == "mean":
-            return loss.mean()
-        elif reduction == "sum":
-            return loss.sum()
-        else:
-            raise NotImplementedError(f"No such reduction mode: {reduction} ...")
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
-    return wrapper
-
 class LossFunc(nn.Module):
 
-    def __init__(self, mode: str, reduction="mean", **kwargs):
+    def __init__(self, mode: str, reduction: str = "mean"):
         super(LossFunc, self).__init__()
+        self.reduction = reduction
         if mode == "gen":
-            self.loss_func = reduce_wrapper(
-                self.criterion_gen, reduction=reduction, **kwargs
-            )
+            self.loss_func = self.criterion_gen
         elif mode == "dis":
-            self.loss_func = reduce_wrapper(
-                self.criterion_dis, reduction=reduction, **kwargs
-            )
+            self.loss_func = self.criterion_dis
         else:
-            raise ValueError(f"No such mode: {mode} ...")
+            raise ValueError(f"No such mode: '{mode}' ...")
+    
+    def _reduce_proxy(self, loss: torch.Tensor) -> torch.Tensor:
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "sum":
+            return loss.sum()
+        else:
+            raise ValueError(f"No such mode: '{self.reduction}' ...")
 
     def criterion_gen(self, *inputs):
         raise NotImplementedError()
@@ -43,6 +34,7 @@ class LossFunc(nn.Module):
     def forward(self, *inputs, **kwargs):
         return self.loss_func(*inputs, **kwargs)
 
+
 class BCELoss(LossFunc):
     """
     generator:
@@ -51,16 +43,28 @@ class BCELoss(LossFunc):
         $\min -\log \sigma(D(x)) - \log(1 - \sigma(D(G(z))))$
     sigma is sigmoid here.
     """
+    def __init__(self, mode: str, reduction="mean"):
+        super(BCELoss, self).__init__(mode=mode, reduction=reduction)
+
+        self._loss = nn.BCELoss(reduction=reduction)
+        self._preprocessing = nn.Sigmoid()
+
     def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
-        return -F.logsigmoid(outs)
+        labels = torch.ones_like(outs).to(outs.device)
+        outs = self._preprocessing(outs)
+        return self._loss(outs, labels)
 
     def criterion_dis(
         self, outs_real: torch.Tensor, outs_fake: torch.Tensor
     ) -> torch.Tensor:
-        assert outs_real.size(0) == outs_fake.size(0), \
-            f"the batch size of outs_real: {outs_real.size(0)} " \
-            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
-        return -F.logsigmoid(outs_real) - (1 - outs_fake.sigmoid()).log()
+        labels_real = torch.ones_like(outs_real).to(outs_real.device)
+        labels_fake = torch.zeros_like(outs_fake).to(outs_fake.device)
+        outs_real = self._preprocessing(outs_real)
+        outs_fake = self._preprocessing(outs_fake)
+        loss1 = self._loss(outs_real, labels_real)
+        loss2 = self._loss(outs_fake, labels_fake)
+        return loss1 + loss2
+
 
 class HingeLoss(LossFunc):
     """
@@ -70,15 +74,15 @@ class HingeLoss(LossFunc):
         $\min \max(0, 1 - D(x)) + \max(0, 1 + D(G(z)))$
     """
     def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
-        return -outs
+        return self._reduce_proxy(-outs)
 
     def criterion_dis(
         self, outs_real: torch.Tensor, outs_fake: torch.Tensor
     ) -> torch.Tensor:
-        assert outs_real.size(0) == outs_fake.size(0), \
-            f"the batch size of outs_real: {outs_real.size(0)} " \
-            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
-        return F.relu(1 - outs_real) + F.relu(1 + outs_fake)
+        loss_real = self._reduce_proxy(F.relu(1 - outs_real))
+        loss_fake = self._reduce_proxy(F.relu(1 + outs_fake))
+        return loss_real + loss_fake
+
 
 class WLoss(LossFunc):
     """
@@ -89,15 +93,13 @@ class WLoss(LossFunc):
         $\min D(x) - D(G(z))$
     """
     def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
-        return -outs
+        return self._reduce_proxy(-outs)
 
     def criterion_dis(
         self, outs_real: torch.Tensor, outs_fake: torch.Tensor
     ) -> torch.Tensor:
-        assert outs_real.size(0) == outs_fake.size(0), \
-            f"the batch size of outs_real: {outs_real.size(0)} " \
-            f"doesnot match that of outs_fake: {outs_fake.size(0)}"
-        return outs_fake - outs_real
+        return self._reduce_proxy(outs_fake) - self._reduce_proxy(outs_real)
+
 
 class LeastSquaresLoss(LossFunc):
     """
@@ -107,7 +109,7 @@ class LeastSquaresLoss(LossFunc):
         $\min [(D(x) - 1)^2 + (D(G(z)))^2] / 2
     """
     def criterion_gen(self, outs: torch.Tensor) -> torch.Tensor:
-        return (outs - 1).pow(2) / 2
+        return self._reduce_proxy((outs - 1).pow(2)) / 2
 
     def criterion_dis(
         self, outs_real: torch.Tensor, outs_fake: torch.Tensor
@@ -115,5 +117,7 @@ class LeastSquaresLoss(LossFunc):
         assert outs_real.size(0) == outs_fake.size(0), \
             f"the batch size of outs_real: {outs_real.size(0)} " \
             f"doesnot match that of outs_fake: {outs_fake.size(0)}"
-        return ((outs_real - 1).pow(2) + outs_fake.pow(2)) / 2
+        loss_real = self._reduce_proxy((outs_real - 1).pow(2))
+        loss_fake = self._reduce_proxy(outs_fake.pow(2))
+        return (loss_real + loss_fake) / 2
 

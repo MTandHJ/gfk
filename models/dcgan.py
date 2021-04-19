@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 
-from .utils import choose_activation, setIn, setOut
+from .utils import setAct, setIn, setOut
 
 
 
@@ -26,7 +26,7 @@ class GenBlock(nn.Module):
         )
 
         self.bn = nn.BatchNorm2d(out_channels)
-        self.activation = choose_activation(activation)
+        self.activation = setAct(activation)
 
     def forward(self, x):
         x = self.deconv(x)
@@ -58,7 +58,7 @@ class DisBlock(nn.Module):
         else:
             self.bn = nn.Identity()
 
-        self.activation = choose_activation(activation)
+        self.activation = setAct(activation)
 
     def forward(self, x):
         x = self.conv(x)
