@@ -138,8 +138,8 @@ class Coach:
         n: int = 10000,
         batch_size: int = 16,
         n_splits: int = 1,
-        need_fid: bool = True,
-        need_is: bool = True
+        run_fid: bool = True,
+        run_is: bool = True
     ):
 
         fid_score = -1.
@@ -156,7 +156,7 @@ class Coach:
             pin_memory=False
         )
         
-        if need_fid:
+        if run_fid:
             fid_score = fid_score_single(
                 dataloader=dataloader,
                 dataset_type=dataset_type,
@@ -164,7 +164,7 @@ class Coach:
                 device=self.device
             )
         
-        if need_is:
+        if run_is:
             is_score, is_std = inception_score(
                 dataloader=dataloader,
                 model=self.inception_model,

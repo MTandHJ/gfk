@@ -72,8 +72,8 @@ parser.add_argument("--sampling_times", type=int, default=10000)
 parser.add_argument("--e_batch_size", type=int, default=128)
 parser.add_argument("--e_splits", type=int, default=10)
 parser.add_argument("--resize", action="store_false", default=True)
-parser.add_argument("--need_fid", action="store_false", default=True)
-parser.add_argument("--need_is", action="store_false", default=True)
+parser.add_argument("--run_fid", action="store_false", default=True)
+parser.add_argument("--run_is", action="store_false", default=True)
 
 # basic settings
 parser.add_argument("-mom", "--momentum", type=float, default=0.9,
@@ -84,8 +84,8 @@ parser.add_argument("-beta2", "--beta2", type=float, default=0.999,
                 help="the second beta argument for Adam")
 parser.add_argument("-wd", "--weight_decay", type=float, default=0.,
                 help="weight decay")
-parser.add_argument("--steps", type=int, default=8000)
-parser.add_argument("-b", "--batch_size", type=int, default=128)
+parser.add_argument("--steps", type=int, default=100000)
+parser.add_argument("-b", "--batch_size", type=int, default=64)
 parser.add_argument("--resume", action="store_true", default=False)
 parser.add_argument("--progress", action="store_true", default=False, 
                 help="show the progress if true")
@@ -190,7 +190,7 @@ def load_cfg():
     )
 
     # load the inception model for FID and IS evaluation
-    if opts.need_fid or opts.need_is:
+    if opts.run_fid or opts.run_is:
         inception_model = load_inception_model(resize=opts.resize)
     else:
         inception_model = None
@@ -235,8 +235,8 @@ def evaluate(coach, step):
         n=opts.sampling_times,
         batch_size=opts.e_batch_size,
         n_splits=opts.e_splits,
-        need_fid=opts.need_fid,
-        need_is=opts.need_is
+        run_fid=opts.run_fid,
+        run_is=opts.run_is
     )
     writter.add_scalar("FID", fid_score, step)
     writter.add_scalar("IS", is_score, step)
