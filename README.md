@@ -147,7 +147,7 @@ It seems that spectral normalization does little to small models, or a wrong imp
 
 
 
-### Hinge
+#### Hinge
 
 
 
