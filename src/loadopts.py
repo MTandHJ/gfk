@@ -213,7 +213,7 @@ def load_optimizer(
                 weight_decay=weight_decay, nesterov=nesterov)
     
     cfg.update(**kwargs) # update the kwargs needed automatically
-    print(optim_type, cfg)
+    print(cfg)
     if optim_type == "sgd":
         optim = torch.optim.SGD(model.parameters(), **cfg)
     elif optim_type == "adam":
@@ -240,10 +240,8 @@ def load_learning_policy(
 
     lp_type = learning_policy_[0]
     lp_cfg = learning_policy_[1]
-    lp_description = learning_policy_[2]
     lp_cfg.update(**kwargs) # update the kwargs needed automatically
     print(lp_type, lp_cfg)
-    print(lp_description)
     learning_policy = getattr(
         torch.optim.lr_scheduler, 
         lp_type

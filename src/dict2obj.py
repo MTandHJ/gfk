@@ -3,6 +3,7 @@
 
 
 
+from typing import Any
 
 # Convert the dict to a object.
 
@@ -38,21 +39,36 @@ class Config(dict):
     ...
     AttributeError: 'Config' object has no attribute 'e'
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self, *args, 
+        prefix: str = "",
+        **kwargs
+    ):
         super(Config, self).__init__(*args, **kwargs)
         for name, attr in self.items():
             self.__setattr__(name, attr)
+        
+        self.prefix = prefix
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         super(Config, self).__setitem__(key, value)
         self.__setattr__(key, value)
 
-    def update(self, **kwargs):
+    def update(self, **kwargs) -> None:
         # Note that, we only update the keys and 
         # correspoding values existed.
         for key, value in kwargs.items():
             if key in self.keys():
                 self[key] = value
+
+    def __str__(self) -> str:
+        item = " [{name}: {val}] "
+        infos = "վ'ᴗ' ի-" + self.prefix + "   "
+        for name, val in self.items():
+            infos += item.format(name=name, val=val)
+        return infos
+
+
 
 
 

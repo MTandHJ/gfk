@@ -73,8 +73,8 @@ PIN_MEMORY = True
 # the settings of optimizers of which lr could be pointed
 # additionally.
 OPTIMS = {
-    "sgd": Config(lr=0.01, momentum=0.9, weight_decay=0.0001, nesterov=False),
-    "adam": Config(lr=0.01, betas=(0.9, 0.999), weight_decay=0.)
+    "sgd": Config(lr=0.01, momentum=0.9, weight_decay=0.0001, nesterov=False, prefix="SGD:"),
+    "adam": Config(lr=0.01, betas=(0.9, 0.999), weight_decay=0., prefix="Adam:")
 }
 
 
@@ -84,10 +84,9 @@ LEARNING_POLICY = {
         "StepLR",
         Config(
             step_size=9999999999999,
-            gamma=1
-        ),
-        "Null leaning policy will be applied: " \
-        "keep the learning rate fixed during training."
+            gamma=1,
+            prefix="Null leaning policy will be applied:\n"
+        )
     ),
    "cosine":(   
         "CosineAnnealingLR",   
@@ -95,8 +94,8 @@ LEARNING_POLICY = {
             T_max=100000,
             eta_min=0.,
             last_epoch=-1,
-        ),
-        "cosine learning policy: T_max == epochs - 1"
+            prefix="cosine learning policy: T_max == epochs - 1"
+        )
     )
 }
 
