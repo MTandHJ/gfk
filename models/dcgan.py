@@ -35,7 +35,6 @@ class GenBlock(nn.Module):
         return x
 
 
-
 class DisBlock(nn.Module):
 
     def __init__(
