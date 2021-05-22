@@ -97,8 +97,10 @@ def readme(path: str, opts: "parser", mode: str = "w") -> None:
     import time
     time_ = time.strftime("%Y-%m-%d-%H:%M:%S")
     filename = path + "/README.md"
-    s = "- {0[0]}:  {0[1]}\n"
-    info = "\n## {0}".format(time_)
+    s = "|  {0[0]}  |   {0[1]}    |\n"
+    info = "\n## {0} \n\n\n".format(time_)
+    info += "|  Attribute   |   Value   |\n"
+    info += "| :-------------: | :-----------: |\n"
     for item in opts._get_kwargs():
         info += s.format(item)
     with open(filename, mode, encoding="utf8") as fh:
